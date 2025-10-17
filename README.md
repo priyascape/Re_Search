@@ -1,4 +1,15 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Re_Search
+
+Perplexity Untapd Researcher - NeurIPS Talent Bridge
+
+A Next.js application connecting world-class researchers with career-defining opportunities through AI-powered matching.
+
+## Features
+
+- **Researcher Portal**: Claim your research profile and connect with potential sponsors
+- **Recruiter Portal**: Discover exceptional researchers that match your requirements
+- **AI-Powered Matching**: Intelligent matching system using Perplexity API
+- **Funding Management**: Track and manage conference attendance funding needs
 
 ## Getting Started
 
