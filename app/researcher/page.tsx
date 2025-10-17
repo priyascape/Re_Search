@@ -1,11 +1,18 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { BookOpen, Building2, MapPin, ExternalLink, Quote, DollarSign, Plane, Hotel, Ticket, ArrowRight, Mail, Code } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ResearcherProfile() {
+   const [isLoaded, setIsLoaded] = useState(false);
+
+   useEffect(() => {
+     setIsLoaded(true);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen bg-gray-50 transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
       {/* Header Navigation */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 py-4">
