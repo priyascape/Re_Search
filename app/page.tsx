@@ -1,101 +1,108 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { Users, Briefcase, Sparkles } from 'lucide-react';
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900">
+      <div className="container mx-auto px-4 py-16">
+        {/* Hero Section */}
+        <div className="text-center mb-20">
+          <div className="flex justify-center mb-6">
+            <Sparkles className="w-16 h-16 text-yellow-400 animate-pulse" />
+          </div>
+          <h1 className="text-6xl md:text-7xl font-bold text-white mb-6 bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
+            NeurIPS Talent Bridge
+          </h1>
+          <p className="text-xl md:text-2xl text-purple-200 max-w-3xl mx-auto">
+            Connecting world-class researchers with career-defining opportunities through AI-powered matching
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+        {/* Portal Cards */}
+        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto mb-20">
+          {/* Researcher Portal - Purple/Indigo Theme */}
+          <Link href="/researcher">
+            <div className="group relative bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl shadow-2xl p-12 hover:shadow-purple-500/50 hover:shadow-3xl transition-all duration-300 cursor-pointer transform hover:scale-105 overflow-hidden">
+              {/* Animated background gradient */}
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-400/20 to-indigo-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+              <div className="relative z-10">
+                <div className="flex justify-center mb-8">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-full p-6 group-hover:bg-white/20 transition-all duration-300">
+                    <Users className="w-20 h-20 text-white" />
+                  </div>
+                </div>
+                <h2 className="text-4xl font-bold text-white mb-6 text-center">
+                  I'm a Researcher
+                </h2>
+                <p className="text-purple-100 text-center mb-8 text-lg leading-relaxed">
+                  Showcase your groundbreaking research and connect with sponsors actively seeking your expertise. Get funded, build connections, and advance your career.
+                </p>
+                <div className="flex justify-center">
+                  <span className="inline-flex items-center bg-white text-purple-700 px-8 py-4 rounded-xl font-bold text-lg group-hover:bg-purple-50 transition-colors shadow-lg">
+                    Claim Your Profile
+                    <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          {/* Recruiter Portal - Green Theme */}
+          <Link href="/recruiter">
+            <div className="group relative bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl shadow-2xl p-12 hover:shadow-emerald-500/50 hover:shadow-3xl transition-all duration-300 cursor-pointer transform hover:scale-105 overflow-hidden">
+              {/* Animated background gradient */}
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-teal-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+              <div className="relative z-10">
+                <div className="flex justify-center mb-8">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-full p-6 group-hover:bg-white/20 transition-all duration-300">
+                    <Briefcase className="w-20 h-20 text-white" />
+                  </div>
+                </div>
+                <h2 className="text-4xl font-bold text-white mb-6 text-center">
+                  I'm a Recruiter
+                </h2>
+                <p className="text-emerald-100 text-center mb-8 text-lg leading-relaxed">
+                  Discover exceptional researchers that perfectly match your requirements. AI-powered matching makes finding top talent effortless and precise.
+                </p>
+                <div className="flex justify-center">
+                  <span className="inline-flex items-center bg-white text-emerald-700 px-8 py-4 rounded-xl font-bold text-lg group-hover:bg-emerald-50 transition-colors shadow-lg">
+                    Find Talent Now
+                    <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Link>
+        </div>
+
+        {/* Stats Banner */}
+        <div className="max-w-6xl mx-auto bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-8 border border-white/20">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="text-4xl md:text-5xl font-bold text-white mb-2">127</div>
+              <div className="text-purple-200 text-sm md:text-base font-medium">Researchers Funded</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl md:text-5xl font-bold text-white mb-2">$340K</div>
+              <div className="text-purple-200 text-sm md:text-base font-medium">Total Sponsored</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl md:text-5xl font-bold text-white mb-2">412</div>
+              <div className="text-purple-200 text-sm md:text-base font-medium">Meetings Scheduled</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl md:text-5xl font-bold text-white mb-2">34</div>
+              <div className="text-purple-200 text-sm md:text-base font-medium">Job Offers Made</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }
