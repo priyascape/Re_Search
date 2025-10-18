@@ -54,39 +54,41 @@ export async function POST(request: NextRequest) {
 
     // Use Perplexity to extract skills and match each researcher
     const perplexity = getPerplexityAPI();
-    const matches = [];
 
-    for (const researcher of allResearchers) {
+    // Process all researchers in parallel for much faster results
+    const matchPromises = allResearchers.map(async (researcher) => {
       try {
         console.log(`  📊 Analyzing ${researcher.name}...`);
 
-        // Extract skills from researcher's papers and profile using Perplexity
-        const skillExtractionResult = await perplexity.askAboutResearcher(
-          `Based on this researcher's publications and profile, extract and list their key technical skills, research areas, methodologies, and domain expertise. Focus on skills that would be relevant to job requirements in AI/ML research.`,
-          {
-            name: researcher.name,
-            papers: researcher.topPapers.map(p => ({
-              title: p.title,
-              abstract: p.abstract,
-            })),
-            bio: researcher.summary,
-            institution: researcher.affiliation,
-          }
-        );
+        // Run skill extraction and matching in parallel for each researcher
+        const [skillExtractionResult, matchResult] = await Promise.all([
+          perplexity.askAboutResearcher(
+            `List ONLY the top 5-7 most relevant technical skills and research areas from this researcher's work. Be CONCISE - use bullet points with 3-5 words each (e.g., "Deep Learning", "Computer Vision", "PyTorch/TensorFlow"). No explanations, just skill names.`,
+            {
+              name: researcher.name,
+              papers: researcher.topPapers.map(p => ({
+                title: p.title,
+                abstract: p.abstract,
+              })),
+              bio: researcher.summary,
+              institution: researcher.affiliation,
+            }
+          ),
+          perplexity.matchPaperToJob(
+            {
+              title: `Research Portfolio of ${researcher.name}`,
+              abstract: `${researcher.summary}\n\nTop Papers: ${researcher.topPapers.map(p => p.title).join('; ')}`,
+              authors: researcher.name,
+            },
+            jobDescription
+          ),
+        ]);
 
         const extractedSkills = skillExtractionResult.answer;
 
-        // Match researcher against job description
-        const matchResult = await perplexity.matchPaperToJob(
-          {
-            title: `Research Portfolio of ${researcher.name}`,
-            abstract: `${researcher.summary}\n\nKey Skills: ${extractedSkills}\n\nTop Papers: ${researcher.topPapers.map(p => p.title).join('; ')}`,
-            authors: researcher.name,
-          },
-          jobDescription
-        );
+        console.log(`    ✅ ${researcher.name}: ${matchResult.matchScore}/100`);
 
-        matches.push({
+        return {
           researcher: {
             id: researcher.id,
             name: researcher.name,
@@ -102,20 +104,25 @@ export async function POST(request: NextRequest) {
             extractedSkills,
           },
           citations: matchResult.citations || [],
-        });
-
-        console.log(`    ✅ ${researcher.name}: ${matchResult.matchScore}/100`);
+        };
       } catch (error) {
         console.error(`    ❌ Error matching ${researcher.name}:`, error);
-        // Continue with other researchers even if one fails
+        // Return null for failed matches so we can filter them out
+        return null;
       }
-    }
+    });
+
+    // Wait for all matches to complete
+    const allMatches = await Promise.all(matchPromises);
+
+    // Filter out any null results from errors
+    const matches = allMatches.filter((match): match is NonNullable<typeof match> => match !== null);
 
     // Sort by match score (highest first)
     matches.sort((a, b) => b.match.score - a.match.score);
 
-    // Take top 5-10 matches
-    const topMatches = matches.slice(0, 10);
+    // Return all matches (no hardcoded limit - let the frontend decide)
+    const topMatches = matches;
 
     console.log(`✅ Found ${topMatches.length} matches`);
 

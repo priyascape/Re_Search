@@ -240,31 +240,40 @@ Abstract: ${paper.abstract}
     const messages: PerplexityMessage[] = [
       {
         role: 'system',
-        content: `You are an expert AI research recruiter specializing in matching research papers to job requirements.
-Analyze the alignment between research work and job needs. Provide:
-1. A match score (0-100)
-2. Key alignment points (3-5 specific matches)
-3. Any gaps or missing qualifications
-4. Overall relevance assessment
+        content: `You are a CRITICAL and SELECTIVE AI research recruiter. Be strict in your evaluations.
 
-Focus on technical skills, research areas, methodologies, and practical applications.`,
+SCORING GUIDELINES (be harsh):
+- 90-100: Perfect match, rare (only if ALL requirements met + strong track record)
+- 80-89: Excellent match (most requirements + proven expertise)
+- 70-79: Good match (core requirements + some gaps)
+- 60-69: Moderate match (partial fit, significant gaps)
+- 50-59: Weak match (minimal overlap)
+- Below 50: Poor match (major misalignment)
+
+Be CRITICAL. Don't inflate scores. Look for RED FLAGS:
+- Lack of practical experience
+- Missing key technical skills
+- Insufficient publication record
+- No evidence of claimed expertise`,
       },
       {
         role: 'user',
-        content: `Analyze this research paper against the job requirements:
+        content: `Critically analyze this researcher against job requirements:
 
 ${paperContext}
 
 Job Requirements:
 ${jobRequirements}
 
-Provide a JSON response with this exact structure:
+Be STRICT. Provide concise, critical analysis in JSON:
 {
-  "matchScore": <number 0-100>,
-  "alignment": [<array of 3-5 specific alignment points>],
-  "gaps": [<array of any gaps or concerns>],
-  "relevance": "<brief overall assessment>"
-}`,
+  "matchScore": <number 0-100, be harsh - most should be 60-80>,
+  "alignment": [<2-3 SHORT bullet points (max 15 words each) of strongest matches>],
+  "gaps": [<2-3 SHORT critical gaps or concerns>],
+  "relevance": "<one sentence critical summary>"
+}
+
+Keep alignment points CONCISE (15 words max). Focus on concrete evidence, not vague statements.`,
       },
     ];
 
@@ -338,24 +347,25 @@ ${context.papers
     const messages: PerplexityMessage[] = [
       {
         role: 'system',
-        content: `You are an expert research analyst providing insights about AI researchers based on their publications and background.
-Answer questions accurately using the provided context. Include confidence level and cite specific sources.
-Be honest about limitations - if information isn't available, say so.`,
+        content: `You are a research analyst. Extract information concisely and accurately.
+Be brief - focus on key facts only. Cite specific evidence.`,
       },
       {
         role: 'user',
-        content: `Based on this researcher's profile, answer the following question:
+        content: `Analyze this researcher and answer concisely:
 
 ${researcherContext}
 
 Question: ${question}
 
-Provide a JSON response with:
+Provide BRIEF JSON response:
 {
-  "answer": "<detailed answer based on context>",
+  "answer": "<concise answer, max 100 words>",
   "confidence": "<high/medium/low>",
-  "sources": [<specific papers, experience items, or bio details used>]
-}`,
+  "sources": [<1-2 specific sources>]
+}
+
+Be concise. Extract only essential information.`,
       },
     ];
 
@@ -458,39 +468,48 @@ Return 5-10 most relevant papers.`,
    * Fetch comprehensive researcher profile using Perplexity search
    * @param name - Researcher's full name
    * @param affiliation - University or institution name
-   * @returns Researcher profile with top 5 papers and professional summary
+   * @param limit - Number of papers to fetch (default: 10, max: 20)
+   * @returns Researcher profile with top papers and professional summary
    */
   async fetchResearcherProfile(
     name: string,
-    affiliation: string
+    affiliation: string,
+    limit: number = 10
   ): Promise<ResearcherProfileResult> {
-    // Check cache (disabled temporarily to force fresh results with new prompt)
-    const cacheKey = { name, affiliation };
-    // const cached = this.cache.get('fetchResearcherProfile', cacheKey);
-    // if (cached) return cached;
+    // Enforce reasonable limits
+    const paperLimit = Math.min(Math.max(1, limit), 20);
+
+    // Check cache
+    const cacheKey = { name, affiliation, limit: paperLimit };
+    const cached = this.cache.get('fetchResearcherProfile', cacheKey);
+    if (cached) {
+      console.log(`📦 Cache hit for ${name} at ${affiliation}`);
+      return cached;
+    }
 
     const messages: PerplexityMessage[] = [
       {
         role: 'system',
         content: `You are a Google Scholar search bot. Your ONLY job is to search Google Scholar and return EXACTLY what you find.
 
-CRITICAL: You MUST return EXACTLY 5 papers in the topPapers array. NOT 1, NOT 2, NOT 3 - EXACTLY 5 PAPERS.
+CRITICAL: You MUST return UP TO ${paperLimit} papers in the topPapers array. Return as many high-quality papers as you can find (up to ${paperLimit}), but it's okay to return fewer if the researcher has less published work.
 
 Use your online search capabilities to find the researcher's Google Scholar profile RIGHT NOW.`,
       },
       {
         role: 'user',
-        content: `TASK: Search Google Scholar for "${name}" at "${affiliation}" and return their top 5 most cited papers.
+        content: `TASK: Search Google Scholar for "${name}" at "${affiliation}" and return their top most cited papers (up to ${paperLimit} papers).
 
 STEP 1: Go to Google Scholar and search: "${name}" "${affiliation}"
 STEP 2: Find their author profile
-STEP 3: Extract their top 5 most cited papers from the profile
+STEP 3: Extract their top most cited papers from the profile (aim for ${paperLimit} papers)
 STEP 4: Get the working URLs for each paper
 
-MANDATORY REQUIREMENT: The topPapers array MUST contain EXACTLY 5 papers.
-- If the researcher has 100+ papers (like Yann LeCun), pick the 5 MOST CITED ones
-- If they have 10 papers, pick the top 5
-- If they have fewer than 5, include all of them and note that in the summary
+REQUIREMENTS:
+- Return UP TO ${paperLimit} papers in the topPapers array
+- If the researcher has many papers, pick the MOST CITED ones
+- If they have fewer than ${paperLimit} papers, return all available papers
+- Each paper must include the researcher's name in the authors field
 
 Return ONLY this JSON format (no other text):
 {
@@ -498,61 +517,30 @@ Return ONLY this JSON format (no other text):
   "affiliation": "${affiliation}",
   "summary": "Specific 2-3 sentence summary about their research focus, key contributions, and most notable work based on their Google Scholar profile",
   "topPapers": [
+    // Include up to ${paperLimit} papers (or fewer if the researcher has less)
     {
       "title": "EXACT paper title from Google Scholar",
       "authors": "ALL authors as listed (including ${name})",
       "abstract": "Brief description or abstract",
       "url": "https://arxiv.org/abs/... OR https://doi.org/... OR Google Scholar link",
       "year": "YYYY"
-    },
-    {
-      "title": "Second paper title",
-      "authors": "Authors including ${name}",
-      "abstract": "Description",
-      "url": "Working URL",
-      "year": "YYYY"
-    },
-    {
-      "title": "Third paper title",
-      "authors": "Authors including ${name}",
-      "abstract": "Description",
-      "url": "Working URL",
-      "year": "YYYY"
-    },
-    {
-      "title": "Fourth paper title",
-      "authors": "Authors including ${name}",
-      "abstract": "Description",
-      "url": "Working URL",
-      "year": "YYYY"
-    },
-    {
-      "title": "Fifth paper title",
-      "authors": "Authors including ${name}",
-      "abstract": "Description",
-      "url": "Working URL",
-      "year": "YYYY"
     }
+    // ... more papers up to ${paperLimit} total
   ]
 }
 
 VERIFICATION CHECKLIST BEFORE RESPONDING:
 ✓ Did I search Google Scholar online RIGHT NOW?
 ✓ Did I find the correct person at ${affiliation}?
-✓ Does topPapers array have EXACTLY 5 objects?
+✓ Does topPapers array have UP TO ${paperLimit} objects (or fewer if less are available)?
 ✓ Does each paper include "${name}" in the authors field?
 ✓ Does each paper have a real working URL?
 ✓ Are these papers from the researcher's ACTUAL Google Scholar profile?
 
-EXAMPLE for "Yann LeCun" at "New York University":
-He has 100+ papers, so return his 5 MOST CITED:
-1. "Gradient-Based Learning Applied to Document Recognition" (1998, ~40000 citations)
-2. "Deep Learning" (Nature, 2015, ~50000+ citations)
-3. "Handwritten Digit Recognition with a Back-Propagation Network" (1989)
-4. "Learning Algorithms for Classification" (or another highly cited paper)
-5. "Convolutional Networks for Images, Speech, and Time-Series" (or another highly cited paper)
+EXAMPLE for "Yann LeCun" at "New York University" with limit ${paperLimit}:
+He has 100+ papers, so return his ${paperLimit} MOST CITED papers based on citation count.
 
-CRITICAL: topPapers array length MUST equal 5. Count them before you return!`,
+IMPORTANT: Return as many high-quality papers as you can find up to ${paperLimit}. It's okay to return fewer if the researcher has published less than ${paperLimit} papers.`,
       },
     ];
 

@@ -450,13 +450,24 @@ export default function MatchesPage() {
                       <div className="flex items-center gap-3 mb-2 flex-wrap">
                         <h2 className="text-2xl font-bold text-gray-900">{researcher.name}</h2>
                         <span className={`px-3 py-1 rounded-full text-sm font-bold ${
-                          matchScore >= 90
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : matchScore >= 85
-                            ? 'bg-teal-100 text-teal-700'
-                            : 'bg-blue-100 text-blue-700'
+                          matchScore >= 85
+                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                            : matchScore >= 75
+                            ? 'bg-teal-100 text-teal-700 border border-teal-300'
+                            : matchScore >= 65
+                            ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                            : matchScore >= 50
+                            ? 'bg-yellow-100 text-yellow-700 border border-yellow-300'
+                            : 'bg-gray-100 text-gray-700 border border-gray-300'
                         }`}>
                           {matchScore}% Match
+                        </span>
+                        {/* Score Interpretation */}
+                        <span className="text-xs text-gray-500">
+                          {matchScore >= 85 ? '(Excellent)' :
+                           matchScore >= 75 ? '(Good)' :
+                           matchScore >= 65 ? '(Moderate)' :
+                           matchScore >= 50 ? '(Weak)' : '(Poor)'}
                         </span>
                         {rank === 1 && (
                           <span className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
@@ -482,7 +493,7 @@ export default function MatchesPage() {
                       <div className="flex gap-6 text-sm mb-4">
                         <div>
                           <span className="font-semibold text-gray-900">{researcher.topPapers?.length || researcher.stats?.publications || 0}</span>
-                          <span className="text-gray-600 ml-1">Publications</span>
+                          <span className="text-gray-600 ml-1">{(researcher.topPapers?.length || researcher.stats?.publications || 0) === 1 ? 'Publication' : 'Publications'}</span>
                         </div>
                         {researcher.stats && (
                           <>
@@ -517,6 +528,12 @@ export default function MatchesPage() {
                     <div className="flex items-start gap-3">
                       <BookOpen className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-gray-900">Top Publication</h4>
+                          <span className="text-xs text-gray-600 bg-white px-2 py-1 rounded-full">
+                            {researcher.topPapers.length} {researcher.topPapers.length === 1 ? 'paper' : 'papers'} total
+                          </span>
+                        </div>
                         <h3 className="font-bold text-gray-900 mb-1">{researcher.topPapers[0].title}</h3>
                         <p className="text-sm text-gray-600 mb-2">{researcher.topPapers[0].authors}</p>
                         <p className="text-sm text-gray-700 mb-3">{researcher.topPapers[0].abstract}</p>
@@ -528,7 +545,7 @@ export default function MatchesPage() {
                           View Paper
                         </a>
                         {researcher.topPapers.length > 1 && (
-                          <p className="text-xs text-gray-500 mt-2">+{researcher.topPapers.length - 1} more publications</p>
+                          <p className="text-xs text-gray-500 mt-2">+{researcher.topPapers.length - 1} more {researcher.topPapers.length - 1 === 1 ? 'publication' : 'publications'}</p>
                         )}
                       </div>
                     </div>
@@ -567,37 +584,50 @@ export default function MatchesPage() {
                   </div>
                 ) : null}
 
-                {/* Match Reasons */}
+                {/* Match Summary - Condensed */}
                 <div className="bg-emerald-50 rounded-lg p-4 mb-4 border border-emerald-200">
-                  <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-emerald-600" />
-                    Why This Match (Powered by Perplexity)
-                  </h3>
-                  <ul className="space-y-2">
-                    {alignment.map((reason: string, idx: number) => (
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-emerald-600" />
+                      Match Summary
+                    </h3>
+                    {extractedSkills && (
+                      <button
+                        onClick={() => toggleExpand(rank)}
+                        className="text-xs text-emerald-700 hover:text-emerald-900 font-medium flex items-center gap-1"
+                      >
+                        {expandedId === rank ? 'Hide' : 'View'} Full Analysis →
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Top 2 alignment points only */}
+                  <ul className="space-y-1.5 mb-3">
+                    {alignment.slice(0, 2).map((reason: string, idx: number) => (
                       <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
                         <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                        <span>{reason}</span>
+                        <span className="line-clamp-2">{reason}</span>
                       </li>
                     ))}
+                    {alignment.length > 2 && (
+                      <li className="text-xs text-gray-500 ml-6">
+                        +{alignment.length - 2} more {alignment.length - 2 === 1 ? 'point' : 'points'} in full analysis
+                      </li>
+                    )}
                   </ul>
+
+                  {/* Show top gap if exists */}
                   {gaps.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-emerald-200">
-                      <h4 className="font-semibold text-gray-900 mb-2 text-sm">Potential Gaps:</h4>
-                      <ul className="space-y-1">
-                        {gaps.map((gap: string, idx: number) => (
-                          <li key={idx} className="text-sm text-gray-600 flex items-start gap-2">
-                            <span className="text-amber-500">•</span>
-                            <span>{gap}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {extractedSkills && (
-                    <div className="mt-4 pt-4 border-t border-emerald-200">
-                      <h4 className="font-semibold text-gray-900 mb-2 text-sm">Extracted Skills:</h4>
-                      <p className="text-sm text-gray-700 whitespace-pre-line">{extractedSkills}</p>
+                    <div className="pt-3 border-t border-emerald-200">
+                      <div className="flex items-start gap-2 text-sm text-amber-700">
+                        <span className="text-amber-500 font-bold">⚠</span>
+                        <span className="line-clamp-1">{gaps[0]}</span>
+                      </div>
+                      {gaps.length > 1 && (
+                        <p className="text-xs text-gray-500 ml-6 mt-1">
+                          +{gaps.length - 1} more {gaps.length - 1 === 1 ? 'concern' : 'concerns'} in full analysis
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -635,6 +665,64 @@ export default function MatchesPage() {
               {expandedId === rank && (
                 <div className="border-t border-gray-200 bg-gray-50 p-6">
                   <h3 className="text-xl font-bold text-gray-900 mb-6">Detailed Analysis</h3>
+
+                  {/* Full Match Analysis */}
+                  <div className="mb-6">
+                    <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-emerald-600" />
+                      Complete Match Analysis
+                    </h4>
+                    <div className="bg-white rounded-lg p-4 border border-gray-200">
+                      {/* All Alignment Points */}
+                      <div className="mb-4">
+                        <h5 className="font-semibold text-gray-900 text-sm mb-2">Strengths & Alignment:</h5>
+                        <ul className="space-y-2">
+                          {alignment.map((reason: string, idx: number) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                              <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                              <span>{reason}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* All Gaps */}
+                      {gaps.length > 0 && (
+                        <div className="pt-4 border-t border-gray-200">
+                          <h5 className="font-semibold text-gray-900 text-sm mb-2">Gaps & Concerns:</h5>
+                          <ul className="space-y-2">
+                            {gaps.map((gap: string, idx: number) => (
+                              <li key={idx} className="flex items-start gap-2 text-sm text-amber-700">
+                                <span className="text-amber-500 font-bold mt-0.5">⚠</span>
+                                <span>{gap}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Overall Relevance */}
+                      {matchData.relevance && (
+                        <div className="pt-4 border-t border-gray-200 mt-4">
+                          <h5 className="font-semibold text-gray-900 text-sm mb-2">Overall Assessment:</h5>
+                          <p className="text-sm text-gray-700 italic">{matchData.relevance}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Extracted Skills - Full Detail */}
+                  {extractedSkills && (
+                    <div className="mb-6">
+                      <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <Code className="w-4 h-4 text-indigo-600" />
+                        Technical Skills & Expertise
+                      </h4>
+                      <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="text-sm text-gray-700 whitespace-pre-line">{extractedSkills}</div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Professional Summary */}
                   {researcher.summary && (
