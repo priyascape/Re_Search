@@ -1,6 +1,6 @@
 'use client';
 
-//import { useState } from 'react';
+import { useState } from 'react';
 import { Users, Building2, Sparkles, TrendingUp, BookOpen, ExternalLink, AlertCircle, CheckCircle, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
