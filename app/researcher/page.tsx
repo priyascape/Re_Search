@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BookOpen, Building2, ExternalLink, Quote, DollarSign, Plane, Hotel, Ticket, ArrowRight, Loader2, Search, User, University } from 'lucide-react';
+import { BookOpen, Building2, ExternalLink, Quote, DollarSign, Plane, Hotel, Ticket, ArrowRight, Loader2, Search, User, University, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -27,6 +27,15 @@ interface Candidate {
   confidence: 'high' | 'medium' | 'low';
 }
 
+interface RecommendedPaper {
+  title: string;
+  authors: string;
+  abstract: string;
+  url: string;
+  relevance: string;
+  match_score: number;
+}
+
 export default function ResearcherProfile() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -35,6 +44,8 @@ export default function ResearcherProfile() {
   const [showOverlay, setShowOverlay] = useState(true);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [showCandidates, setShowCandidates] = useState(false);
+  const [recommendedPapers, setRecommendedPapers] = useState<RecommendedPaper[]>([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     affiliation: ''
@@ -71,6 +82,9 @@ export default function ResearcherProfile() {
 
       if (data.success && data.data) {
         setProfile(data.data);
+
+        // After loading profile, fetch NeurIPS 2024 recommendations
+        fetchRecommendations(researcherName, researcherAffiliation, data.data.topPapers);
       } else {
         throw new Error('Invalid response from API');
       }
@@ -79,6 +93,35 @@ export default function ResearcherProfile() {
       setError(err instanceof Error ? err.message : 'Failed to load profile');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRecommendations = async (name: string, affiliation: string, papers: Paper[]) => {
+    try {
+      setLoadingRecommendations(true);
+
+      // Extract research areas from papers (use titles as proxy)
+      const areas = papers.slice(0, 3).map(p => {
+        // Extract key terms from title (simple approach)
+        const words = p.title.split(' ').filter(w => w.length > 5);
+        return words.slice(0, 2).join(' ');
+      }).join(', ');
+
+      const response = await fetch(
+        `/api/researcher/recommendations?name=${encodeURIComponent(name)}&affiliation=${encodeURIComponent(affiliation)}&areas=${encodeURIComponent(areas)}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data.papers) {
+          setRecommendedPapers(data.data.papers);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching recommendations:', err);
+      // Don't set error - recommendations are optional
+    } finally {
+      setLoadingRecommendations(false);
     }
   };
 
@@ -168,13 +211,19 @@ export default function ResearcherProfile() {
   };
 
   return (
-    <div className={`min-h-screen bg-gray-50 transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={`min-h-screen bg-white transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
       {/* Header Navigation */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <Link href="/" className="text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center">
-            ← Back to Home
-          </Link>
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-2 transition-colors">
+              ← Back to Home
+            </Link>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-blue-600" />
+              <span className="font-semibold text-gray-900">Perplexity Re-Searcher</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -192,11 +241,11 @@ export default function ResearcherProfile() {
                 <button
                   key={index}
                   onClick={() => handleSelectCandidate(candidate)}
-                  className="w-full text-left p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all group"
+                  className="w-full text-left p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 text-lg group-hover:text-indigo-700">
+                      <h3 className="font-bold text-gray-900 text-lg group-hover:text-blue-700">
                         {candidate.name}
                       </h3>
                       <p className="text-sm text-gray-600 mt-1 flex items-center gap-2">
@@ -244,8 +293,8 @@ export default function ResearcherProfile() {
               <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Search className="w-8 h-8 text-white" />
               </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Find Researcher</h2>
-              <p className="text-gray-600">Enter researcher details to view their profile</p>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Claim your profile</h2>
+              <p className="text-gray-600">Please enter your detials here</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -264,7 +313,7 @@ export default function ResearcherProfile() {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="e.g., Yann LeCun"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-white text-black placeholder:text-gray-400"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white text-gray-900 placeholder:text-gray-400"
                   style={{ color: '#000000' }}
                   disabled={loading}
                 />
@@ -285,7 +334,7 @@ export default function ResearcherProfile() {
                   value={formData.affiliation}
                   onChange={handleInputChange}
                   placeholder="e.g., New York University"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-white text-black placeholder:text-gray-400"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white text-gray-900 placeholder:text-gray-400"
                   style={{ color: '#000000' }}
                   disabled={loading}
                 />
@@ -302,7 +351,7 @@ export default function ResearcherProfile() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 px-6 rounded-lg font-bold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 px-6 rounded-lg font-bold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -391,6 +440,71 @@ export default function ResearcherProfile() {
               </div>
             </div>
           </div>
+
+          {/* NeurIPS 2024 Recommendations */}
+          {recommendedPapers.length > 0 && (
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg shadow-sm border-2 border-purple-200 p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <Sparkles className="w-6 h-6 text-purple-600" />
+                    Recommended NeurIPS 2024 Papers
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Top papers aligned with your research interests
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                {recommendedPapers.slice(0, 5).map((paper, index) => (
+                  <div
+                    key={index}
+                    className="bg-white rounded-lg p-4 border border-purple-200 hover:border-purple-400 transition-all hover:shadow-md"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="text-xs font-bold text-purple-600 bg-purple-100 px-2 py-1 rounded">
+                        #{index + 1}
+                      </span>
+                      <span className="text-xs font-semibold text-gray-600">
+                        {paper.match_score}% match
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-gray-900 text-sm mb-2 line-clamp-2">
+                      {paper.title}
+                    </h3>
+                    <p className="text-xs text-gray-600 mb-2">{paper.authors}</p>
+                    <p className="text-xs text-gray-700 mb-3 line-clamp-2">
+                      {paper.abstract}
+                    </p>
+                    <div className="mb-3 pb-3 border-b border-gray-200">
+                      <p className="text-xs text-purple-700 italic">
+                        <strong>Why relevant:</strong> {paper.relevance}
+                      </p>
+                    </div>
+                    <a
+                      href={paper.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      View Paper
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {loadingRecommendations && (
+            <div className="bg-purple-50 rounded-lg shadow-sm border border-purple-200 p-6 mb-6">
+              <div className="flex items-center gap-3">
+                <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
+                <p className="text-gray-700">Finding relevant NeurIPS 2024 papers for you...</p>
+              </div>
+            </div>
+          )}
 
           {/* Two Column Layout */}
           <div className="grid lg:grid-cols-3 gap-6">
