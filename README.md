@@ -1,7 +1,7 @@
 
 # 🧠 Perplexity ReSearcher
 
-**Where Research Papers Meet Real Problems** — Create opportunities by connecting conference-accepted researchers with organizations through grounded, evidence-based reasoning.
+**Where Research Papers Meet Real Problems** — Create opportunities by connecting conference-accepted researchers with AI native companies through published papers that demonstrate evidence and skill-based reasoning.
 
 Built for the **Perplexity London Hackathon 2024** to inspire curiosity, seek knowledge, and reason through the complex task of matching human expertise to unsolved problems.
 
