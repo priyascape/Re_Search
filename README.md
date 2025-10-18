@@ -1,15 +1,64 @@
-# Re_Search
+# 🧠 Re_Search
 
-Perplexity Untapd Researcher - NeurIPS Talent Bridge
+**Perplexity ReSearcher** — an open reasoning graph that connects live research problems with the people actively learning to solve them.
 
-A Next.js application connecting world-class researchers with career-defining opportunities through AI-powered matching.
+Built with **Next.js** and powered by the **Perplexity API**, ReSearcher transforms the idea of hiring into a process of reasoning:  
+organisations describe problems, researchers contribute conjectures, and the system grounds every match in verifiable evidence.
 
-## Features
+---
 
-- **Researcher Portal**: Claim your research profile and connect with potential sponsors
-- **Recruiter Portal**: Discover exceptional researchers that match your requirements
-- **AI-Powered Matching**: Intelligent matching system using Perplexity API
-- **Funding Management**: Track and manage conference attendance funding needs
+## 🌍 What It Does
+
+ReSearcher creates a dynamic **Reasoning Graph** between researchers, papers, and real-world questions.
+
+- **Researcher Portal** – Claim your verified research profile (from Google Scholar, arXiv, NeurIPS, etc.) and publish ongoing reasoning, not static résumés.  
+- **Problem Portal** – Organisations post open problems or project briefs; the system interprets them as hypotheses to be tested, not “job openings.”  
+- **Perplexity-Powered Reasoning** – Each match is generated through grounded search and transparent citation chains, showing *why* a researcher’s work addresses a specific problem.  
+- **Funding & Collaboration Loop** – Sponsors can directly fund attendance, prototypes, or experiments, turning reasoning into opportunity.  
+
+---
+
+## 🧩 Key Concepts
+
+| Term | Meaning |
+|------|----------|
+| **Knowledge Graph** | Maps *what* is known — static facts and citations. |
+| **Reasoning Graph** | Maps *how* understanding evolves — problems, conjectures, and evidence relationships. |
+| **ReSearcher** | The agent connecting these graphs through verifiable reasoning. |
+
+---
+
+## ⚙️ Tech Stack
+
+- **Frontend:** Next.js 14, React 18, Tailwind CSS  
+- **Backend:** Node.js / Vercel Serverless  
+- **Intelligence Layer:** Perplexity API (grounded search + citations)  
+- **Data Sources:** NeurIPS 2024 / arXiv / Google Scholar metadata  
+- **Payments (demo):** Stripe sandbox for sponsorship flows  
+
+---
+
+## 🚀 Vision
+
+> “If LinkedIn is the career graph of the industrial era,  
+> **ReSearcher** is the reasoning graph of the intelligence era.”
+
+Every paper, experiment, and idea becomes a living node in an evolving network of curiosity.  
+ReSearcher helps people and organisations **ask better questions — and reason their way to better answers.**
+
+---
+
+## 🧪 Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Set environment variables (see .env.example for Perplexity API key)
+cp .env.example .env.local
+
+# Run development server
+npm run dev
 
 ## Getting Started
 
