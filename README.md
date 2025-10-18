@@ -1,6 +1,6 @@
 # Perplexity ReSearcher
 
-An AI-powered platform connecting world-class researchers with career-defining opportunities through intelligent matching powered by Perplexity AI.
+An AI-powered platform connecting world-class researchers with career-defining opportunities through intelligent matching powered by Perplexity AI - Search API and Grounded LLM.
 
 [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
