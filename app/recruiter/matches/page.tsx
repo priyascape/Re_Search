@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Award, TrendingUp, FileText, Mail, DollarSign, ChevronDown, ChevronUp, Sparkles, ExternalLink, Send, Building2, MapPin, BookOpen, CheckCircle, Code, Quote } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Award, TrendingUp, FileText, Mail, DollarSign, ChevronDown, ChevronUp, Sparkles, ExternalLink, Send, Building2, MapPin, BookOpen, CheckCircle, Code, Quote, Loader2, Briefcase } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface Researcher {
   rank: number;
@@ -284,9 +285,38 @@ const researchers: Researcher[] = [
 ];
 
 export default function MatchesPage() {
+  const router = useRouter();
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [customQuestion, setCustomQuestion] = useState('');
   const [askedQuestions, setAskedQuestions] = useState<{ [key: number]: string[] }>({});
+  const [matches, setMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Load match results from sessionStorage
+    const loadMatches = () => {
+      try {
+        if (typeof window !== 'undefined') {
+          const storedData = sessionStorage.getItem('matchResults');
+          if (storedData) {
+            const data = JSON.parse(storedData);
+            setMatches(data.matches || []);
+            setLoading(false);
+          } else {
+            setError('No match results found. Please perform a search first.');
+            setLoading(false);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading matches:', err);
+        setError('Failed to load match results.');
+        setLoading(false);
+      }
+    };
+
+    loadMatches();
+  }, []);
 
   const toggleExpand = (rank: number) => {
     setExpandedId(expandedId === rank ? null : rank);
@@ -308,10 +338,45 @@ export default function MatchesPage() {
     'Do they have experience presenting at conferences?'
   ];
 
-  const totalFunding = researchers.reduce((sum, r) => sum + r.funding.needed, 0);
+  // Use dynamic matches or fallback to demo data
+  const displayData = matches.length > 0 ? matches : researchers;
+  const totalFunding = 4500; // Default per researcher
   const traditionalRecruitingCost = 85000; // Average cost per hire
   const savings = traditionalRecruitingCost - totalFunding;
   const savingsPercent = Math.round((savings / traditionalRecruitingCost) * 100);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-16 h-16 text-emerald-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 text-lg">Loading match results...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50">
+        <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
+          <div className="container mx-auto px-4 py-4">
+            <Link href="/recruiter" className="text-emerald-600 hover:text-emerald-800 font-medium inline-flex items-center">
+              ← New Search
+            </Link>
+          </div>
+        </div>
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <p className="text-red-700 font-bold mb-2">{error}</p>
+            <Link href="/recruiter" className="text-emerald-600 hover:text-emerald-800 font-medium">
+              Go back and start a new search
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50">
@@ -334,7 +399,7 @@ export default function MatchesPage() {
                 <h1 className="text-4xl font-bold text-gray-900">Top Matching Researchers</h1>
               </div>
               <p className="text-gray-600 text-lg">
-                Found {researchers.length} exceptional candidates for your AI Safety Research Scientist role
+                Found {displayData.length} exceptional candidates for your role
               </p>
               <div className="flex items-center gap-2 mt-3">
                 <span className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-medium">
@@ -348,42 +413,52 @@ export default function MatchesPage() {
 
         {/* Researcher Cards */}
         <div className="space-y-6 mb-8">
-          {researchers.map((researcher) => (
-            <div
-              key={researcher.rank}
-              className={`bg-white rounded-xl shadow-sm border-2 transition-all ${
-                researcher.rank === 1
-                  ? 'border-emerald-300 shadow-emerald-100'
-                  : 'border-gray-200 hover:border-emerald-200'
-              }`}
-            >
+          {displayData.map((item, index) => {
+            // Handle both API format and demo format
+            const researcher = item.researcher || item;
+            const matchData = item.match || {};
+            const rank = index + 1;
+            const matchScore = matchData.score || item.matchScore || 0;
+            const alignment = matchData.alignment || item.matchReasons || [];
+            const gaps = matchData.gaps || [];
+            const extractedSkills = matchData.extractedSkills || '';
+
+            return (
+              <div
+                key={researcher.id || rank}
+                className={`bg-white rounded-xl shadow-sm border-2 transition-all ${
+                  rank === 1
+                    ? 'border-emerald-300 shadow-emerald-100'
+                    : 'border-gray-200 hover:border-emerald-200'
+                }`}
+              >
               {/* Main Card Content */}
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-start gap-4 flex-1">
                     {/* Rank Badge */}
                     <div className={`flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center font-bold text-2xl ${
-                      researcher.rank === 1 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white' :
-                      researcher.rank === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white' :
-                      researcher.rank === 3 ? 'bg-gradient-to-br from-orange-300 to-orange-400 text-white' :
+                      rank === 1 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white' :
+                      rank === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white' :
+                      rank === 3 ? 'bg-gradient-to-br from-orange-300 to-orange-400 text-white' :
                       'bg-gradient-to-br from-emerald-100 to-teal-100 text-emerald-700'
                     }`}>
-                      #{researcher.rank}
+                      #{rank}
                     </div>
 
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2 flex-wrap">
                         <h2 className="text-2xl font-bold text-gray-900">{researcher.name}</h2>
                         <span className={`px-3 py-1 rounded-full text-sm font-bold ${
-                          researcher.matchScore >= 90
+                          matchScore >= 90
                             ? 'bg-emerald-100 text-emerald-700'
-                            : researcher.matchScore >= 85
+                            : matchScore >= 85
                             ? 'bg-teal-100 text-teal-700'
                             : 'bg-blue-100 text-blue-700'
                         }`}>
-                          {researcher.matchScore}% Match
+                          {matchScore}% Match
                         </span>
-                        {researcher.rank === 1 && (
+                        {rank === 1 && (
                           <span className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                             <Sparkles className="w-3 h-3" />
                             TOP MATCH
@@ -393,28 +468,34 @@ export default function MatchesPage() {
                       <div className="flex items-center gap-4 text-gray-600 mb-3">
                         <div className="flex items-center gap-1">
                           <Building2 className="w-4 h-4" />
-                          <span>{researcher.institution}</span>
+                          <span>{researcher.affiliation || researcher.institution}</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" />
-                          <span>{researcher.location}</span>
-                        </div>
+                        {researcher.location && (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-4 h-4" />
+                            <span>{researcher.location}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Stats */}
                       <div className="flex gap-6 text-sm mb-4">
                         <div>
-                          <span className="font-semibold text-gray-900">{researcher.stats.publications}</span>
+                          <span className="font-semibold text-gray-900">{researcher.topPapers?.length || researcher.stats?.publications || 0}</span>
                           <span className="text-gray-600 ml-1">Publications</span>
                         </div>
-                        <div>
-                          <span className="font-semibold text-gray-900">{researcher.stats.citations}</span>
-                          <span className="text-gray-600 ml-1">Citations</span>
-                        </div>
-                        <div>
-                          <span className="font-semibold text-gray-900">{researcher.stats.hIndex}</span>
-                          <span className="text-gray-600 ml-1">h-index</span>
-                        </div>
+                        {researcher.stats && (
+                          <>
+                            <div>
+                              <span className="font-semibold text-gray-900">{researcher.stats.citations}</span>
+                              <span className="text-gray-600 ml-1">Citations</span>
+                            </div>
+                            <div>
+                              <span className="font-semibold text-gray-900">{researcher.stats.hIndex}</span>
+                              <span className="text-gray-600 ml-1">h-index</span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -423,45 +504,68 @@ export default function MatchesPage() {
                   <div className="flex-shrink-0 ml-4">
                     <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 text-center">
                       <div className="text-2xl font-bold text-green-600 mb-1">
-                        ${researcher.funding.needed.toLocaleString()}
+                        ${researcher.funding?.needed.toLocaleString() || '4,500'}
                       </div>
                       <div className="text-xs text-gray-600">Funding Needed</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Paper */}
-                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 mb-4 border border-indigo-200">
-                  <div className="flex items-start gap-3">
-                    <BookOpen className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 mb-1">{researcher.paper.title}</h3>
-                      <p className="text-sm text-gray-600 mb-2">{researcher.paper.authors}</p>
-                      <p className="text-sm text-gray-700 mb-3">{researcher.paper.abstract}</p>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {researcher.paper.topics.map((topic, idx) => (
-                          <span key={idx} className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-medium">
-                            {topic}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span className="font-medium">{researcher.paper.conference}</span>
-                        <span>•</span>
-                        <span><strong>{researcher.paper.citations}</strong> citations</span>
-                        {researcher.paper.githubUrl && (
-                          <>
-                            <span>•</span>
-                            <a href={researcher.paper.githubUrl} className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800">
-                              <Code className="w-3 h-3" />
-                              GitHub
-                            </a>
-                          </>
+                {/* Papers - Show top paper or all papers */}
+                {researcher.topPapers && researcher.topPapers.length > 0 ? (
+                  <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 mb-4 border border-indigo-200">
+                    <div className="flex items-start gap-3">
+                      <BookOpen className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="font-bold text-gray-900 mb-1">{researcher.topPapers[0].title}</h3>
+                        <p className="text-sm text-gray-600 mb-2">{researcher.topPapers[0].authors}</p>
+                        <p className="text-sm text-gray-700 mb-3">{researcher.topPapers[0].abstract}</p>
+                        {researcher.topPapers[0].year && (
+                          <p className="text-sm text-gray-600 mb-2">Year: {researcher.topPapers[0].year}</p>
+                        )}
+                        <a href={researcher.topPapers[0].url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                          <ExternalLink className="w-3 h-3" />
+                          View Paper
+                        </a>
+                        {researcher.topPapers.length > 1 && (
+                          <p className="text-xs text-gray-500 mt-2">+{researcher.topPapers.length - 1} more publications</p>
                         )}
                       </div>
                     </div>
                   </div>
-                </div>
+                ) : researcher.paper ? (
+                  <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 mb-4 border border-indigo-200">
+                    <div className="flex items-start gap-3">
+                      <BookOpen className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="font-bold text-gray-900 mb-1">{researcher.paper.title}</h3>
+                        <p className="text-sm text-gray-600 mb-2">{researcher.paper.authors}</p>
+                        <p className="text-sm text-gray-700 mb-3">{researcher.paper.abstract}</p>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {researcher.paper.topics.map((topic: string, idx: number) => (
+                            <span key={idx} className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-medium">
+                              {topic}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <span className="font-medium">{researcher.paper.conference}</span>
+                          <span>•</span>
+                          <span><strong>{researcher.paper.citations}</strong> citations</span>
+                          {researcher.paper.githubUrl && (
+                            <>
+                              <span>•</span>
+                              <a href={researcher.paper.githubUrl} className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800">
+                                <Code className="w-3 h-3" />
+                                GitHub
+                              </a>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
 
                 {/* Match Reasons */}
                 <div className="bg-emerald-50 rounded-lg p-4 mb-4 border border-emerald-200">
@@ -470,36 +574,55 @@ export default function MatchesPage() {
                     Why This Match (Powered by Perplexity)
                   </h3>
                   <ul className="space-y-2">
-                    {researcher.matchReasons.map((reason, idx) => (
+                    {alignment.map((reason: string, idx: number) => (
                       <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
                         <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
                         <span>{reason}</span>
                       </li>
                     ))}
                   </ul>
+                  {gaps.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-emerald-200">
+                      <h4 className="font-semibold text-gray-900 mb-2 text-sm">Potential Gaps:</h4>
+                      <ul className="space-y-1">
+                        {gaps.map((gap: string, idx: number) => (
+                          <li key={idx} className="text-sm text-gray-600 flex items-start gap-2">
+                            <span className="text-amber-500">•</span>
+                            <span>{gap}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {extractedSkills && (
+                    <div className="mt-4 pt-4 border-t border-emerald-200">
+                      <h4 className="font-semibold text-gray-900 mb-2 text-sm">Extracted Skills:</h4>
+                      <p className="text-sm text-gray-700 whitespace-pre-line">{extractedSkills}</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex gap-3">
                   <button
-                    onClick={() => toggleExpand(researcher.rank)}
+                    onClick={() => toggleExpand(rank)}
                     className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-3 rounded-lg font-bold hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                   >
-                    {expandedId === researcher.rank ? (
+                    {expandedId === rank ? (
                       <>
                         <ChevronUp className="w-4 h-4" />
-                        Hide Deep Dive
+                        Hide Details
                       </>
                     ) : (
                       <>
                         <ChevronDown className="w-4 h-4" />
-                        View Deep Dive
+                        View Details
                       </>
                     )}
                   </button>
                   <button className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-bold hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg flex items-center gap-2">
                     <DollarSign className="w-4 h-4" />
-                    Sponsor ${researcher.funding.needed.toLocaleString()}
+                    Sponsor ${researcher.funding?.needed.toLocaleString() || '4,500'}
                   </button>
                   <button className="px-6 py-3 border-2 border-emerald-600 text-emerald-600 rounded-lg font-bold hover:bg-emerald-50 transition-colors flex items-center gap-2">
                     <Mail className="w-4 h-4" />
@@ -509,52 +632,91 @@ export default function MatchesPage() {
               </div>
 
               {/* Deep Dive Section */}
-              {expandedId === researcher.rank && (
+              {expandedId === rank && (
                 <div className="border-t border-gray-200 bg-gray-50 p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-6">Deep Dive Analysis</h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-6">Detailed Analysis</h3>
 
-                  {/* Key Findings */}
-                  <div className="mb-6">
-                    <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                      <Award className="w-4 h-4 text-purple-600" />
-                      Key Research Findings
-                    </h4>
-                    <ul className="space-y-2 bg-white rounded-lg p-4 border border-gray-200">
-                      {researcher.deepDive.keyFindings.map((finding, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                          <div className="w-1.5 h-1.5 bg-purple-600 rounded-full mt-2 flex-shrink-0"></div>
-                          <span>{finding}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Relevant Experience */}
-                  <div className="mb-6">
-                    <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-indigo-600" />
-                      Relevant Experience
-                    </h4>
-                    <ul className="space-y-2 bg-white rounded-lg p-4 border border-gray-200">
-                      {researcher.deepDive.relevantExperience.map((exp, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                          <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full mt-2 flex-shrink-0"></div>
-                          <span>{exp}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Technical Depth */}
-                  <div className="mb-6">
-                    <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                      <Quote className="w-4 h-4 text-emerald-600" />
-                      Technical Assessment
-                    </h4>
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                      <p className="text-sm text-gray-700">{researcher.deepDive.technicalDepth}</p>
+                  {/* Professional Summary */}
+                  {researcher.summary && (
+                    <div className="mb-6">
+                      <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <Quote className="w-4 h-4 text-emerald-600" />
+                        Professional Summary
+                      </h4>
+                      <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <p className="text-sm text-gray-700 whitespace-pre-line">{researcher.summary}</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* All Publications */}
+                  {researcher.topPapers && researcher.topPapers.length > 1 && (
+                    <div className="mb-6">
+                      <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-indigo-600" />
+                        All Publications ({researcher.topPapers.length})
+                      </h4>
+                      <div className="space-y-3">
+                        {researcher.topPapers.map((paper: any, idx: number) => (
+                          <div key={idx} className="bg-white rounded-lg p-4 border border-gray-200">
+                            <h5 className="font-semibold text-gray-900 text-sm mb-1">{paper.title}</h5>
+                            <p className="text-xs text-gray-600 mb-2">{paper.authors}</p>
+                            {paper.year && <p className="text-xs text-gray-500 mb-2">Year: {paper.year}</p>}
+                            <p className="text-xs text-gray-700 mb-2">{paper.abstract}</p>
+                            <a href={paper.url} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                              <ExternalLink className="w-3 h-3" />
+                              View Paper
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Demo data deep dive (if available) */}
+                  {researcher.deepDive && (
+                    <>
+                      <div className="mb-6">
+                        <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                          <Award className="w-4 h-4 text-purple-600" />
+                          Key Research Findings
+                        </h4>
+                        <ul className="space-y-2 bg-white rounded-lg p-4 border border-gray-200">
+                          {researcher.deepDive.keyFindings.map((finding: string, idx: number) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                              <div className="w-1.5 h-1.5 bg-purple-600 rounded-full mt-2 flex-shrink-0"></div>
+                              <span>{finding}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="mb-6">
+                        <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                          <Briefcase className="w-4 h-4 text-indigo-600" />
+                          Relevant Experience
+                        </h4>
+                        <ul className="space-y-2 bg-white rounded-lg p-4 border border-gray-200">
+                          {researcher.deepDive.relevantExperience.map((exp: string, idx: number) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                              <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full mt-2 flex-shrink-0"></div>
+                              <span>{exp}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="mb-6">
+                        <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                          <Quote className="w-4 h-4 text-emerald-600" />
+                          Technical Assessment
+                        </h4>
+                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                          <p className="text-sm text-gray-700">{researcher.deepDive.technicalDepth}</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   {/* Q&A Section */}
                   <div className="bg-white rounded-lg p-6 border border-gray-200">
@@ -567,7 +729,7 @@ export default function MatchesPage() {
                         {suggestedQuestions.map((q, idx) => (
                           <button
                             key={idx}
-                            onClick={() => handleAskQuestion(researcher.rank, q)}
+                            onClick={() => handleAskQuestion(rank, q)}
                             className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs hover:bg-emerald-100 hover:text-emerald-700 transition-colors"
                           >
                             {q}
@@ -586,12 +748,12 @@ export default function MatchesPage() {
                         className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
                         onKeyPress={(e) => {
                           if (e.key === 'Enter' && customQuestion.trim()) {
-                            handleAskQuestion(researcher.rank, customQuestion);
+                            handleAskQuestion(rank, customQuestion);
                           }
                         }}
                       />
                       <button
-                        onClick={() => customQuestion.trim() && handleAskQuestion(researcher.rank, customQuestion)}
+                        onClick={() => customQuestion.trim() && handleAskQuestion(rank, customQuestion)}
                         disabled={!customQuestion.trim()}
                         className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                       >
@@ -601,9 +763,9 @@ export default function MatchesPage() {
                     </div>
 
                     {/* Asked Questions */}
-                    {askedQuestions[researcher.rank] && askedQuestions[researcher.rank].length > 0 && (
+                    {askedQuestions[rank] && askedQuestions[rank].length > 0 && (
                       <div className="space-y-3">
-                        {askedQuestions[researcher.rank].map((q, idx) => (
+                        {askedQuestions[rank].map((q, idx) => (
                           <div key={idx} className="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
                             <p className="text-sm font-medium text-gray-900 mb-2">Q: {q}</p>
                             <p className="text-sm text-gray-700">
@@ -621,8 +783,9 @@ export default function MatchesPage() {
                   </div>
                 </div>
               )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
 
         {/* Cost Savings Summary */}
@@ -678,13 +841,5 @@ export default function MatchesPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-function Briefcase(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-    </svg>
   );
 }

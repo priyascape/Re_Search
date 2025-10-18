@@ -1,15 +1,111 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BookOpen, Building2, MapPin, ExternalLink, Quote, DollarSign, Plane, Hotel, Ticket, ArrowRight, Mail, Code } from 'lucide-react';
+import { BookOpen, Building2, ExternalLink, Quote, DollarSign, Plane, Hotel, Ticket, ArrowRight, Loader2, Search, User, University } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+
+interface Paper {
+  title: string;
+  authors: string;
+  abstract: string;
+  url: string;
+  year?: string;
+}
+
+interface ResearcherProfile {
+  name: string;
+  affiliation: string;
+  summary: string;
+  topPapers: Paper[];
+}
 
 export default function ResearcherProfile() {
-   const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [profile, setProfile] = useState<ResearcherProfile | null>(null);
+  const [showOverlay, setShowOverlay] = useState(true);
+  const [formData, setFormData] = useState({
+    name: '',
+    affiliation: ''
+  });
 
-   useEffect(() => {
-     setIsLoaded(true);
-  }, []);
+  const searchParams = useSearchParams();
+  const urlName = searchParams.get('name');
+  const urlAffiliation = searchParams.get('affiliation');
+
+  useEffect(() => {
+    setIsLoaded(true);
+    // If URL params exist, auto-fill and fetch
+    if (urlName && urlAffiliation) {
+      setFormData({ name: urlName, affiliation: urlAffiliation });
+      setShowOverlay(false);
+      fetchResearcherProfile(urlName, urlAffiliation);
+    }
+  }, [urlName, urlAffiliation]);
+
+  const fetchResearcherProfile = async (researcherName: string, researcherAffiliation: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(
+        `/api/researcher/profile?name=${encodeURIComponent(researcherName)}&affiliation=${encodeURIComponent(researcherAffiliation)}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch researcher profile');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        setProfile(data.data);
+      } else {
+        throw new Error('Invalid response from API');
+      }
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.name.trim() || !formData.affiliation.trim()) {
+      setError('Please enter both name and affiliation');
+      return;
+    }
+
+    setError(null);
+    await fetchResearcherProfile(formData.name, formData.affiliation);
+
+    // Only hide overlay if fetch was successful
+    if (!error) {
+      setShowOverlay(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Extract initials for avatar
+  const getInitials = (name: string) => {
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return parts[0][0] + parts[parts.length - 1][0];
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
 
   return (
     <div className={`min-h-screen bg-gray-50 transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
@@ -22,249 +118,359 @@ export default function ResearcherProfile() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Profile Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-6">
-          <div className="flex items-start gap-8">
-            {/* Profile Photo */}
-            <div className="flex-shrink-0">
-              <div className="w-32 h-32 bg-gradient-to-br from-purple-400 to-indigo-600 rounded-full flex items-center justify-center text-white text-4xl font-bold">
-                SC
+      {/* Overlay Modal for Entering Researcher Details */}
+      {showOverlay && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all animate-slideUp">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="w-8 h-8 text-white" />
               </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Find Researcher</h2>
+              <p className="text-gray-600">Enter researcher details to view their profile</p>
             </div>
 
-            {/* Profile Info */}
-            <div className="flex-1">
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">Dr. Sarah Chen</h1>
-              <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-4">
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4" />
-                  <span>University of São Paulo</span>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Name Input */}
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Researcher Name
+                  </div>
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Yann LeCun"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-white text-black placeholder:text-gray-400"
+                  style={{ color: '#000000' }}
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Affiliation Input */}
+              <div>
+                <label htmlFor="affiliation" className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="flex items-center gap-2">
+                    <University className="w-4 h-4" />
+                    University / Institution
+                  </div>
+                </label>
+                <input
+                  type="text"
+                  id="affiliation"
+                  name="affiliation"
+                  value={formData.affiliation}
+                  onChange={handleInputChange}
+                  placeholder="e.g., New York University"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-white text-black placeholder:text-gray-400"
+                  style={{ color: '#000000' }}
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {error}
                 </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  <span>São Paulo, Brazil</span>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 px-6 rounded-lg font-bold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-5 h-5" />
+                    Search Researcher
+                  </>
+                )}
+              </button>
+
+              {/* Example Suggestions */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <p className="text-xs text-gray-500 mb-2">Try these examples:</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ name: 'Yann LeCun', affiliation: 'New York University' })}
+                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full transition-colors"
+                    disabled={loading}
+                  >
+                    Yann LeCun
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ name: 'Geoffrey Hinton', affiliation: 'University of Toronto' })}
+                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full transition-colors"
+                    disabled={loading}
+                  >
+                    Geoffrey Hinton
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ name: 'Andrew Ng', affiliation: 'Stanford University' })}
+                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full transition-colors"
+                    disabled={loading}
+                  >
+                    Andrew Ng
+                  </button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  <span className="text-indigo-600">s.chen@usp.br</span>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content - Only show when overlay is hidden and profile exists */}
+      {!showOverlay && profile && (
+        <div className="container mx-auto px-4 py-8 max-w-6xl animate-fadeIn">
+          {/* Profile Header */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-6">
+            <div className="flex items-start gap-8">
+              {/* Profile Photo */}
+              <div className="flex-shrink-0">
+                <div className="w-32 h-32 bg-gradient-to-br from-purple-400 to-indigo-600 rounded-full flex items-center justify-center text-white text-4xl font-bold">
+                  {getInitials(profile.name)}
                 </div>
               </div>
 
-              {/* Bio */}
-              <p className="text-gray-700 leading-relaxed mb-4">
-                Assistant Professor of Computer Science specializing in AI Safety and Alignment.
-                My research focuses on developing scalable oversight mechanisms for advanced AI systems,
-                with particular emphasis on debate-based approaches and interpretability. Previously at
-                OpenAI and DeepMind Research. PhD from Stanford University (2019).
-              </p>
-
-              {/* Research Interests */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">AI Safety</span>
-                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">Alignment</span>
-                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">Scalable Oversight</span>
-                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">Machine Learning</span>
-                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">Interpretability</span>
-              </div>
-
-              {/* Stats */}
-              <div className="flex gap-6 text-sm">
-                <div>
-                  <span className="font-semibold text-gray-900">23</span>
-                  <span className="text-gray-600 ml-1">Publications</span>
+              {/* Profile Info */}
+              <div className="flex-1">
+                <div className="flex items-start justify-between mb-2">
+                  <h1 className="text-4xl font-bold text-gray-900">{profile.name}</h1>
+                  <button
+                    onClick={() => setShowOverlay(true)}
+                    className="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
+                  >
+                    <Search className="w-4 h-4" />
+                    New Search
+                  </button>
                 </div>
-                <div>
-                  <span className="font-semibold text-gray-900">1,847</span>
-                  <span className="text-gray-600 ml-1">Citations</span>
+                <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-4">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4" />
+                    <span>{profile.affiliation}</span>
+                  </div>
                 </div>
-                <div>
-                  <span className="font-semibold text-gray-900">31</span>
-                  <span className="text-gray-600 ml-1">h-index</span>
+
+                {/* Bio - Using the dynamic summary */}
+                <div className="text-gray-700 leading-relaxed mb-4 whitespace-pre-line">
+                  {profile.summary}
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Two Column Layout */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left Column - Papers */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Featured Paper */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <BookOpen className="w-5 h-5 text-indigo-600" />
-                <h2 className="text-xl font-bold text-gray-900">Featured Publication</h2>
-              </div>
-
-              {/* Paper Card */}
-              <div className="border border-indigo-200 bg-indigo-50/30 rounded-lg p-6 hover:shadow-md transition-shadow">
-                <div className="mb-3">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2 leading-tight">
-                    Scalable Oversight of AI Systems via Debate
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    S Chen, M Rodriguez, A Kumar, J Thompson
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    NeurIPS 2024 (Oral Presentation)
-                  </p>
+          {/* Two Column Layout */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Left Column - Papers */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Papers Section */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-indigo-600" />
+                    <h2 className="text-xl font-bold text-gray-900">Publications</h2>
+                  </div>
+                  {profile.topPapers.length > 0 && (
+                    <span className="text-sm text-gray-500">
+                      {profile.topPapers.length} {profile.topPapers.length === 1 ? 'paper' : 'papers'} found
+                    </span>
+                  )}
                 </div>
 
-                {/* Abstract */}
-                <div className="mb-4">
-                  <div className="flex items-start gap-2 mb-2">
-                    <Quote className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      We present a novel framework for scalable oversight of advanced AI systems using
-                      structured debate protocols. Our approach enables human evaluators to judge the
-                      safety and alignment of AI systems performing tasks beyond human expertise by
-                      observing debates between AI agents. We demonstrate that debate-based oversight
-                      scales to complex domains including mathematical reasoning, code generation, and
-                      strategic planning, achieving 89% accuracy in detecting misaligned behavior.
-                      Our method significantly outperforms traditional oversight mechanisms while
-                      requiring 10x less human evaluation time.
+                <div className="space-y-6">
+                  {profile.topPapers.map((paper, index) => (
+                    <div
+                      key={index}
+                      className={`border rounded-lg p-6 hover:shadow-md transition-shadow ${
+                        index === 0
+                          ? 'border-indigo-200 bg-indigo-50/30'
+                          : 'border-gray-200'
+                      }`}
+                    >
+                      <div className="mb-3">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2 leading-tight">
+                          {paper.title}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {paper.authors}
+                        </p>
+                        {paper.year && (
+                          <p className="text-sm text-gray-500">
+                            {paper.year}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Abstract */}
+                      {paper.abstract && (
+                        <div className="mb-4">
+                          <div className="flex items-start gap-2 mb-2">
+                            <Quote className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
+                            <p className="text-sm text-gray-700 leading-relaxed">
+                              {paper.abstract}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Links */}
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                        <div className="flex gap-4">
+                          <a
+                            href={paper.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            View Paper
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {profile.topPapers.length === 0 && (
+                  <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                    <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-gray-600 font-medium mb-1">No publications found</p>
+                    <p className="text-sm text-gray-500 max-w-md mx-auto">
+                      This researcher may be early in their career, or their publications may not be indexed in Google Scholar yet.
+                      Check the professional summary above for more information about their work and expertise.
                     </p>
                   </div>
-                </div>
-
-                {/* Topics */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">AI Safety</span>
-                  <span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">Alignment</span>
-                  <span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">Scalable Oversight</span>
-                  <span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">Debate</span>
-                  <span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">Interpretability</span>
-                </div>
-
-                {/* Links & Citations */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                  <div className="flex gap-4">
-                    <a
-                      href="https://github.com/sarahchen/debate-oversight"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
-                    >
-                      <Code className="w-4 h-4" />
-                      GitHub
-                    </a>
-                    <a
-                      href="#"
-                      className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      Paper
-                    </a>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <span className="font-semibold">247</span> citations
-                  </div>
-                </div>
-              </div>
-
-              {/* Recent Papers */}
-              <div className="mt-6 space-y-4">
-                <h3 className="font-semibold text-gray-900">Recent Publications</h3>
-
-                <div className="border-l-4 border-gray-200 pl-4 hover:border-indigo-400 transition-colors">
-                  <h4 className="font-medium text-gray-900 text-sm mb-1">
-                    Constitutional AI: Training Language Models to be Helpful, Harmless, and Honest
-                  </h4>
-                  <p className="text-xs text-gray-600 mb-1">S Chen, R Patel, L Williams</p>
-                  <p className="text-xs text-gray-500">ICML 2024 • <span className="font-medium">189 citations</span></p>
-                </div>
-
-                <div className="border-l-4 border-gray-200 pl-4 hover:border-indigo-400 transition-colors">
-                  <h4 className="font-medium text-gray-900 text-sm mb-1">
-                    Recursive Reward Modeling for Training Aligned AI Systems
-                  </h4>
-                  <p className="text-xs text-gray-600 mb-1">M Rodriguez, S Chen, A Kumar</p>
-                  <p className="text-xs text-gray-500">NeurIPS 2023 • <span className="font-medium">312 citations</span></p>
-                </div>
-
-                <div className="border-l-4 border-gray-200 pl-4 hover:border-indigo-400 transition-colors">
-                  <h4 className="font-medium text-gray-900 text-sm mb-1">
-                    Mechanistic Interpretability in Large Language Models
-                  </h4>
-                  <p className="text-xs text-gray-600 mb-1">S Chen, J Thompson, K Lee</p>
-                  <p className="text-xs text-gray-500">ICLR 2023 • <span className="font-medium">421 citations</span></p>
-                </div>
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Right Column - Funding Needs */}
-          <div className="lg:col-span-1">
-            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg shadow-sm border-2 border-indigo-200 p-6 sticky top-24">
-              <div className="flex items-center gap-2 mb-4">
-                <DollarSign className="w-5 h-5 text-indigo-600" />
-                <h2 className="text-lg font-bold text-gray-900">Funding Needed</h2>
-              </div>
-
-              <div className="bg-white rounded-lg p-4 mb-4 border border-indigo-100">
-                <div className="text-center mb-3">
-                  <div className="text-3xl font-bold text-indigo-600 mb-1">$4,500</div>
-                  <div className="text-sm text-gray-600">Total Required</div>
+            {/* Right Column - Funding Needs */}
+            <div className="lg:col-span-1">
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg shadow-sm border-2 border-indigo-200 p-6 sticky top-24">
+                <div className="flex items-center gap-2 mb-4">
+                  <DollarSign className="w-5 h-5 text-indigo-600" />
+                  <h2 className="text-lg font-bold text-gray-900">Funding Needed</h2>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                  <div className="bg-gradient-to-r from-purple-500 to-indigo-600 h-2 rounded-full" style={{ width: '0%' }}></div>
-                </div>
-                <div className="text-xs text-gray-500 text-center">$0 raised • 0% funded</div>
-              </div>
 
-              <div className="space-y-3 mb-6">
-                <div className="flex items-start gap-3 bg-white rounded-lg p-3 border border-gray-200">
-                  <Ticket className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-sm font-medium text-gray-900">Conference Registration</span>
-                      <span className="text-sm font-bold text-gray-900 whitespace-nowrap ml-2">$1,200</span>
+                <div className="bg-white rounded-lg p-4 mb-4 border border-indigo-100">
+                  <div className="text-center mb-3">
+                    <div className="text-3xl font-bold text-indigo-600 mb-1">$4,500</div>
+                    <div className="text-sm text-gray-600">Total Required</div>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                    <div className="bg-gradient-to-r from-purple-500 to-indigo-600 h-2 rounded-full" style={{ width: '0%' }}></div>
+                  </div>
+                  <div className="text-xs text-gray-500 text-center">$0 raised • 0% funded</div>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-start gap-3 bg-white rounded-lg p-3 border border-gray-200">
+                    <Ticket className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="text-sm font-medium text-gray-900">Conference Registration</span>
+                        <span className="text-sm font-bold text-gray-900 whitespace-nowrap ml-2">$1,200</span>
+                      </div>
+                      <p className="text-xs text-gray-600">NeurIPS 2024 attendance</p>
                     </div>
-                    <p className="text-xs text-gray-600">NeurIPS 2024 attendance</p>
+                  </div>
+
+                  <div className="flex items-start gap-3 bg-white rounded-lg p-3 border border-gray-200">
+                    <Plane className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="text-sm font-medium text-gray-900">Travel Expenses</span>
+                        <span className="text-sm font-bold text-gray-900 whitespace-nowrap ml-2">$1,800</span>
+                      </div>
+                      <p className="text-xs text-gray-600">International flights</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 bg-white rounded-lg p-3 border border-gray-200">
+                    <Hotel className="w-5 h-5 text-pink-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="text-sm font-medium text-gray-900">Accommodation</span>
+                        <span className="text-sm font-bold text-gray-900 whitespace-nowrap ml-2">$1,500</span>
+                      </div>
+                      <p className="text-xs text-gray-600">5 nights near venue</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3 bg-white rounded-lg p-3 border border-gray-200">
-                  <Plane className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-sm font-medium text-gray-900">Travel Expenses</span>
-                      <span className="text-sm font-bold text-gray-900 whitespace-nowrap ml-2">$1,800</span>
-                    </div>
-                    <p className="text-xs text-gray-600">São Paulo → Vancouver flights</p>
-                  </div>
-                </div>
+                {/* CTA Button */}
+                <Link
+                  href="/researcher/conference"
+                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 px-6 rounded-lg font-bold text-center hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 group"
+                >
+                  Claim Profile & Find Sponsors
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
 
-                <div className="flex items-start gap-3 bg-white rounded-lg p-3 border border-gray-200">
-                  <Hotel className="w-5 h-5 text-pink-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-sm font-medium text-gray-900">Accommodation</span>
-                      <span className="text-sm font-bold text-gray-900 whitespace-nowrap ml-2">$1,500</span>
-                    </div>
-                    <p className="text-xs text-gray-600">5 nights near venue</p>
-                  </div>
-                </div>
+                <p className="text-xs text-gray-600 text-center mt-4">
+                  Connect with companies looking to sponsor talented researchers like you
+                </p>
               </div>
-
-              {/* CTA Button */}
-              <Link
-                href="/researcher/conference"
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 px-6 rounded-lg font-bold text-center hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 group"
-              >
-                Claim Profile & Find Sponsors
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-
-              <p className="text-xs text-gray-600 text-center mt-4">
-                Connect with companies looking to sponsor talented researchers like you
-              </p>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Show error state when not in overlay */}
+      {!showOverlay && !profile && !loading && (
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
+          <div className="text-center py-12">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg mb-4 inline-block">
+              <p className="font-bold">Unable to load profile</p>
+              <p className="text-sm">{error || 'Please try again'}</p>
+            </div>
+            <button
+              onClick={() => setShowOverlay(true)}
+              className="text-indigo-600 hover:text-indigo-800 font-medium"
+            >
+              ← Try Another Search
+            </button>
+          </div>
+        </div>
+      )}
+
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+        .animate-slideUp {
+          animation: slideUp 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }
