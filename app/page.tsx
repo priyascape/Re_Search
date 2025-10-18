@@ -1,10 +1,17 @@
 import Link from 'next/link';
-import { Users, Briefcase, Sparkles } from 'lucide-react';
+import { Users, Briefcase, Sparkles, Database } from 'lucide-react';
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900">
       <div className="container mx-auto px-4 py-16">
+        {/* Admin Link */}
+        <div className="absolute top-4 right-4">
+          <Link href="/admin" className="flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white px-4 py-2 rounded-lg hover:bg-white/20 transition-all border border-white/20">
+            <Database className="w-4 h-4" />
+            <span className="text-sm font-medium">Admin</span>
+          </Link>
+        </div>
         {/* Hero Section */}
         <div className="text-center mb-20">
           <div className="flex justify-center mb-6">

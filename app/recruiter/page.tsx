@@ -52,13 +52,39 @@ export default function RecruiterPortal() {
     setJobDescription(DEMO_JOB);
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     setIsSearching(true);
 
-    // Simulate search with loading state
-    setTimeout(() => {
+    try {
+      // Call the match API
+      const response = await fetch('/api/recruiter/match', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jobDescription,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to match researchers');
+      }
+
+      const data = await response.json();
+
+      // Store results in sessionStorage to pass to matches page
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('matchResults', JSON.stringify(data.data));
+      }
+
+      // Navigate to matches page
       router.push('/recruiter/matches');
-    }, 2500);
+    } catch (error) {
+      console.error('Error matching researchers:', error);
+      alert('Failed to find matches. Please try again.');
+      setIsSearching(false);
+    }
   };
 
   return (

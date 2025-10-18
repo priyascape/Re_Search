@@ -1,6 +1,6 @@
 /**
  * Perplexity API wrapper for matching research papers to job requirements
- * Uses llama-3.1-sonar-large-128k-online model with citation support
+ * Uses sonar-pro model with citation support and real-time web search
  */
 
 // Types
@@ -44,6 +44,20 @@ export interface ResearchSearchResult {
     abstract: string;
     url: string;
     relevance: number;
+  }>;
+  citations?: Citation[];
+}
+
+export interface ResearcherProfileResult {
+  name: string;
+  affiliation: string;
+  summary: string;
+  topPapers: Array<{
+    title: string;
+    authors: string;
+    abstract: string;
+    url: string;
+    year?: string;
   }>;
   citations?: Citation[];
 }
@@ -128,7 +142,7 @@ class PerplexityCache {
  */
 export class PerplexityAPI {
   private apiKey: string;
-  private model = 'llama-3.1-sonar-large-128k-online';
+  private model = 'sonar-pro';  // FIXED: Updated to correct Perplexity model name
   private baseUrl = 'https://api.perplexity.ai/chat/completions';
   private cache: PerplexityCache;
   private searchDomains = ['arxiv.org', 'scholar.google.com', 'github.com'];
@@ -437,6 +451,159 @@ Return 5-10 most relevant papers.`,
 
     // Cache result
     this.cache.set('searchResearch', cacheKey, result);
+    return result;
+  }
+
+  /**
+   * Fetch comprehensive researcher profile using Perplexity search
+   * @param name - Researcher's full name
+   * @param affiliation - University or institution name
+   * @returns Researcher profile with top 5 papers and professional summary
+   */
+  async fetchResearcherProfile(
+    name: string,
+    affiliation: string
+  ): Promise<ResearcherProfileResult> {
+    // Check cache (disabled temporarily to force fresh results with new prompt)
+    const cacheKey = { name, affiliation };
+    // const cached = this.cache.get('fetchResearcherProfile', cacheKey);
+    // if (cached) return cached;
+
+    const messages: PerplexityMessage[] = [
+      {
+        role: 'system',
+        content: `You are a Google Scholar search bot. Your ONLY job is to search Google Scholar and return EXACTLY what you find.
+
+CRITICAL: You MUST return EXACTLY 5 papers in the topPapers array. NOT 1, NOT 2, NOT 3 - EXACTLY 5 PAPERS.
+
+Use your online search capabilities to find the researcher's Google Scholar profile RIGHT NOW.`,
+      },
+      {
+        role: 'user',
+        content: `TASK: Search Google Scholar for "${name}" at "${affiliation}" and return their top 5 most cited papers.
+
+STEP 1: Go to Google Scholar and search: "${name}" "${affiliation}"
+STEP 2: Find their author profile
+STEP 3: Extract their top 5 most cited papers from the profile
+STEP 4: Get the working URLs for each paper
+
+MANDATORY REQUIREMENT: The topPapers array MUST contain EXACTLY 5 papers.
+- If the researcher has 100+ papers (like Yann LeCun), pick the 5 MOST CITED ones
+- If they have 10 papers, pick the top 5
+- If they have fewer than 5, include all of them and note that in the summary
+
+Return ONLY this JSON format (no other text):
+{
+  "name": "${name}",
+  "affiliation": "${affiliation}",
+  "summary": "Specific 2-3 sentence summary about their research focus, key contributions, and most notable work based on their Google Scholar profile",
+  "topPapers": [
+    {
+      "title": "EXACT paper title from Google Scholar",
+      "authors": "ALL authors as listed (including ${name})",
+      "abstract": "Brief description or abstract",
+      "url": "https://arxiv.org/abs/... OR https://doi.org/... OR Google Scholar link",
+      "year": "YYYY"
+    },
+    {
+      "title": "Second paper title",
+      "authors": "Authors including ${name}",
+      "abstract": "Description",
+      "url": "Working URL",
+      "year": "YYYY"
+    },
+    {
+      "title": "Third paper title",
+      "authors": "Authors including ${name}",
+      "abstract": "Description",
+      "url": "Working URL",
+      "year": "YYYY"
+    },
+    {
+      "title": "Fourth paper title",
+      "authors": "Authors including ${name}",
+      "abstract": "Description",
+      "url": "Working URL",
+      "year": "YYYY"
+    },
+    {
+      "title": "Fifth paper title",
+      "authors": "Authors including ${name}",
+      "abstract": "Description",
+      "url": "Working URL",
+      "year": "YYYY"
+    }
+  ]
+}
+
+VERIFICATION CHECKLIST BEFORE RESPONDING:
+✓ Did I search Google Scholar online RIGHT NOW?
+✓ Did I find the correct person at ${affiliation}?
+✓ Does topPapers array have EXACTLY 5 objects?
+✓ Does each paper include "${name}" in the authors field?
+✓ Does each paper have a real working URL?
+✓ Are these papers from the researcher's ACTUAL Google Scholar profile?
+
+EXAMPLE for "Yann LeCun" at "New York University":
+He has 100+ papers, so return his 5 MOST CITED:
+1. "Gradient-Based Learning Applied to Document Recognition" (1998, ~40000 citations)
+2. "Deep Learning" (Nature, 2015, ~50000+ citations)
+3. "Handwritten Digit Recognition with a Back-Propagation Network" (1989)
+4. "Learning Algorithms for Classification" (or another highly cited paper)
+5. "Convolutional Networks for Images, Speech, and Time-Series" (or another highly cited paper)
+
+CRITICAL: topPapers array length MUST equal 5. Count them before you return!`,
+      },
+    ];
+
+    console.log(`📡 Calling Perplexity API for: ${name} at ${affiliation}`);
+
+    const response = await this.request(messages, { maxTokens: 3000 });
+    const { content, citations } = this.parseResponse(response);
+
+    console.log(`📨 Perplexity response received (${content.length} chars)`);
+    console.log(`📄 Response preview: ${content.substring(0, 200)}...`);
+
+    // Parse JSON from response
+    let result: ResearcherProfileResult;
+    try {
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonStr = jsonMatch ? jsonMatch[0] : content;
+
+      console.log(`🔍 Parsing JSON response...`);
+
+      const parsed = JSON.parse(jsonStr);
+
+      console.log(`✅ JSON parsed successfully`);
+      console.log(`📊 Papers found in response: ${parsed.topPapers?.length || 0}`);
+
+      result = {
+        name: parsed.name || name,
+        affiliation: parsed.affiliation || affiliation,
+        summary: parsed.summary || 'No summary available.',
+        topPapers: parsed.topPapers || [],
+        citations,
+      };
+
+      // Log paper details
+      if (result.topPapers.length > 0) {
+        console.log(`📚 Papers returned from Perplexity:`);
+        result.topPapers.forEach((paper, i) => {
+          console.log(`  ${i + 1}. "${paper.title}" - ${paper.authors}`);
+        });
+      } else {
+        console.warn(`⚠️ No papers found in Perplexity response`);
+      }
+    } catch (error) {
+      // Fallback if JSON parsing fails
+      console.error('❌ Failed to parse researcher profile JSON:', error);
+      console.error('Raw content:', content);
+
+      throw new Error(`Failed to parse Perplexity response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    // Cache result
+    this.cache.set('fetchResearcherProfile', cacheKey, result);
     return result;
   }
 
