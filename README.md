@@ -24,59 +24,29 @@ Perplexity Re-Searcher is a modern web application that revolutionizes academic 
 
 ### Tech Stack
 
-- **Frontend Framework**: [Next.js 14](https://nextjs.org/) (App Router)
-- **Language**: [TypeScript 5](https://www.typescriptlang.org/)
-- **Styling**: [Tailwind CSS 3.4](https://tailwindcss.com/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **AI Engine**: [Perplexity API](https://docs.perplexity.ai/) (sonar-pro model)
-- **Deployment**: Vercel-ready
+- **Frontend:** Next.js 14, React 18, Tailwind CSS  
+- **Backend:** Node.js / Vercel Serverless  
+- **Intelligence Layer:** Perplexity API (grounded search + citations)  
+- **Data Sources:** NeurIPS 2024 / arXiv / Google Scholar metadata  
+- **Payments (demo):** Stripe sandbox for sponsorship flows  
 
-### Project Structure
+---
 
-```
-Re_Search/
-├── app/                          # Next.js App Router
-│   ├── api/                      # API Routes
-│   │   ├── recruiter/
-│   │   │   └── match/           # Match researchers to jobs
-│   │   └── researcher/
-│   │       ├── profile/         # Fetch researcher profiles
-│   │       ├── search/          # Search for candidates
-│   │       └── recommendations/ # NeurIPS paper recommendations
-│   ├── page.tsx                 # Homepage
-│   ├── researcher/              # Researcher portal
-│   ├── recruiter/               # Recruiter portal
-│   └── admin/                   # Admin dashboard
-├── lib/
-│   ├── perplexity.ts           # Perplexity API integration
-│   └── db.ts                   # In-memory database
-├── components/                  # React components
-└── public/                     # Static assets
-```
+## 🚀 Vision
 
-## 🚀 Getting Started
+> “If LinkedIn is the career graph of the industrial era,  
+> **ReSearcher** is the reasoning graph of the intelligence era.”
 
-### Prerequisites
+Every paper, experiment, and idea becomes a living node in an evolving network of curiosity.  
+ReSearcher helps people and organisations **ask better questions — and reason their way to better answers.**
 
-- Node.js 18+ and npm/yarn/pnpm
-- Perplexity API key ([Get one here](https://www.perplexity.ai/))
+---
 
-### Installation
+## 🧪 Quick Start
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/Re_Search.git
-   cd Re_Search
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   yarn install
-   # or
-   pnpm install
-   ```
+```bash
+# Install dependencies
+npm install
 
 3. **Set up environment variables**
    ```bash
