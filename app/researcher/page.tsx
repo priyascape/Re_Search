@@ -211,13 +211,19 @@ export default function ResearcherProfile() {
   };
 
   return (
-    <div className={`min-h-screen bg-gray-50 transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={`min-h-screen bg-white transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
       {/* Header Navigation */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <Link href="/" className="text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center">
-            ← Back to Home
-          </Link>
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-2 transition-colors">
+              ← Back to Home
+            </Link>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-blue-600" />
+              <span className="font-semibold text-gray-900">Perplexity Re-Searcher</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -235,11 +241,11 @@ export default function ResearcherProfile() {
                 <button
                   key={index}
                   onClick={() => handleSelectCandidate(candidate)}
-                  className="w-full text-left p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all group"
+                  className="w-full text-left p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 text-lg group-hover:text-indigo-700">
+                      <h3 className="font-bold text-gray-900 text-lg group-hover:text-blue-700">
                         {candidate.name}
                       </h3>
                       <p className="text-sm text-gray-600 mt-1 flex items-center gap-2">
@@ -287,8 +293,8 @@ export default function ResearcherProfile() {
               <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Search className="w-8 h-8 text-white" />
               </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Find Researcher</h2>
-              <p className="text-gray-600">Enter researcher details to view their profile</p>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Claim your profile</h2>
+              <p className="text-gray-600">Please enter your detials here</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -307,7 +313,7 @@ export default function ResearcherProfile() {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="e.g., Yann LeCun"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-white text-black placeholder:text-gray-400"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white text-gray-900 placeholder:text-gray-400"
                   style={{ color: '#000000' }}
                   disabled={loading}
                 />
@@ -328,7 +334,7 @@ export default function ResearcherProfile() {
                   value={formData.affiliation}
                   onChange={handleInputChange}
                   placeholder="e.g., New York University"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-white text-black placeholder:text-gray-400"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white text-gray-900 placeholder:text-gray-400"
                   style={{ color: '#000000' }}
                   disabled={loading}
                 />
@@ -345,7 +351,7 @@ export default function ResearcherProfile() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 px-6 rounded-lg font-bold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 px-6 rounded-lg font-bold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
