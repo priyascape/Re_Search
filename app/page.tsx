@@ -10,7 +10,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">Perplexity Re-Searcher</span>
+              <span className="text-xl font-bold text-gray-900">Perplexity ReSearcher</span>
             </div>
             <Link href="/admin" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all">
               <Database className="w-4 h-4" />

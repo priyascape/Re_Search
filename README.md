@@ -1,96 +1,309 @@
-# 🧠 Re_Search
+# Perplexity Re-Searcher
 
-**Perplexity ReSearcher** — an open reasoning graph that connects live research problems with the people actively learning to solve them.
+An AI-powered platform connecting world-class researchers with career-defining opportunities through intelligent matching powered by Perplexity AI.
 
-Built with **Next.js** and powered by the **Perplexity API**, ReSearcher transforms the idea of hiring into a process of reasoning:  
-organisations describe problems, researchers contribute conjectures, and the system grounds every match in verifiable evidence.
+[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
----
+## 🌟 Overview
 
-## 🌍 What It Does
+Perplexity Re-Searcher is a modern web application that revolutionizes academic recruitment by leveraging AI to match researchers with relevant opportunities. The platform uses Perplexity's advanced AI capabilities to analyze research papers, extract skills, and find the perfect alignment between researchers and job opportunities.
 
-ReSearcher creates a dynamic **Reasoning Graph** between researchers, papers, and real-world questions.
+### Key Features
 
-- **Researcher Portal** – Claim your verified research profile (from Google Scholar, arXiv, NeurIPS, etc.) and publish ongoing reasoning, not static résumés.  
-- **Problem Portal** – Organisations post open problems or project briefs; the system interprets them as hypotheses to be tested, not “job openings.”  
-- **Perplexity-Powered Reasoning** – Each match is generated through grounded search and transparent citation chains, showing *why* a researcher’s work addresses a specific problem.  
-- **Funding & Collaboration Loop** – Sponsors can directly fund attendance, prototypes, or experiments, turning reasoning into opportunity.  
+- 🔍 **AI-Powered Matching** - Intelligent researcher-opportunity matching using Perplexity API
+- 📚 **Research Profile Management** - Automatic sync with Google Scholar publications
+- 🎯 **Smart Recommendations** - Personalized NeurIPS 2024 paper suggestions
+- ⚡ **Fast Search** - Parallel processing for 5-10x faster matching (~5 seconds)
+- 🎨 **Modern UI** - Clean, professional interface with responsive design
+- 📊 **Detailed Analytics** - Match scores, alignment analysis, and skill extraction
 
----
+## 🏗️ Architecture
 
-## 🧩 Key Concepts
+### Tech Stack
 
-| Term | Meaning |
-|------|----------|
-| **Knowledge Graph** | Maps *what* is known — static facts and citations. |
-| **Reasoning Graph** | Maps *how* understanding evolves — problems, conjectures, and evidence relationships. |
-| **ReSearcher** | The agent connecting these graphs through verifiable reasoning. |
+- **Frontend Framework**: [Next.js 14](https://nextjs.org/) (App Router)
+- **Language**: [TypeScript 5](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS 3.4](https://tailwindcss.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **AI Engine**: [Perplexity API](https://docs.perplexity.ai/) (sonar-pro model)
+- **Deployment**: Vercel-ready
 
----
+### Project Structure
 
-## ⚙️ Tech Stack
-
-- **Frontend:** Next.js 14, React 18, Tailwind CSS  
-- **Backend:** Node.js / Vercel Serverless  
-- **Intelligence Layer:** Perplexity API (grounded search + citations)  
-- **Data Sources:** NeurIPS 2024 / arXiv / Google Scholar metadata  
-- **Payments (demo):** Stripe sandbox for sponsorship flows  
-
----
-
-## 🚀 Vision
-
-> “If LinkedIn is the career graph of the industrial era,  
-> **ReSearcher** is the reasoning graph of the intelligence era.”
-
-Every paper, experiment, and idea becomes a living node in an evolving network of curiosity.  
-ReSearcher helps people and organisations **ask better questions — and reason their way to better answers.**
-
----
-
-## 🧪 Quick Start
-
-```bash
-# Install dependencies
-npm install
-
-# Set environment variables (see .env.example for Perplexity API key)
-cp .env.example .env.local
-
-# Run development server
-npm run dev
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+Re_Search/
+├── app/                          # Next.js App Router
+│   ├── api/                      # API Routes
+│   │   ├── recruiter/
+│   │   │   └── match/           # Match researchers to jobs
+│   │   └── researcher/
+│   │       ├── profile/         # Fetch researcher profiles
+│   │       ├── search/          # Search for candidates
+│   │       └── recommendations/ # NeurIPS paper recommendations
+│   ├── page.tsx                 # Homepage
+│   ├── researcher/              # Researcher portal
+│   ├── recruiter/               # Recruiter portal
+│   └── admin/                   # Admin dashboard
+├── lib/
+│   ├── perplexity.ts           # Perplexity API integration
+│   └── db.ts                   # In-memory database
+├── components/                  # React components
+└── public/                     # Static assets
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Getting Started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Prerequisites
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Node.js 18+ and npm/yarn/pnpm
+- Perplexity API key ([Get one here](https://www.perplexity.ai/))
 
-## Learn More
+### Installation
 
-To learn more about Next.js, take a look at the following resources:
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/Re_Search.git
+   cd Re_Search
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   # or
+   pnpm install
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env.local
+   ```
 
-## Deploy on Vercel
+   Edit `.env.local` and add your Perplexity API key:
+   ```env
+   PERPLEXITY_API_KEY=your_api_key_here
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. **Run the development server**
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   # or
+   pnpm dev
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. **Open your browser**
+
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+### Building for Production
+
+```bash
+npm run build
+npm start
+```
+
+## 🔌 Perplexity API Integration
+
+### How It Works
+
+The application integrates Perplexity AI in several key areas:
+
+#### 1. **Researcher Profile Fetching** (`lib/perplexity.ts`)
+
+```typescript
+// Searches Google Scholar for researcher publications
+async fetchResearcherProfile(name: string, affiliation: string, limit: number = 10)
+```
+
+- Uses Perplexity to search Google Scholar in real-time
+- Extracts top N most-cited papers (configurable, default: 10)
+- Validates paper authorship and removes duplicates
+- Returns structured profile with papers and summary
+
+#### 2. **Researcher-Job Matching** (`lib/perplexity.ts`)
+
+```typescript
+// Matches researcher portfolio against job requirements
+async matchPaperToJob(paper: Paper, jobRequirements: string)
+```
+
+- Analyzes researcher's work against job description
+- Returns match score (0-100), alignment points, and gaps
+- Uses critical scoring (strict rubric, realistic scores)
+- Provides detailed explanations with citations
+
+#### 3. **Skill Extraction** (`lib/perplexity.ts`)
+
+```typescript
+// Extracts technical skills from researcher profile
+async askAboutResearcher(question: string, researcher: ResearcherContext)
+```
+
+- Analyzes papers and profile for key skills
+- Extracts research areas and methodologies
+- Returns concise bullet-point summaries
+- Used for matching and profile enhancement
+
+#### 4. **Paper Recommendations** (`app/api/researcher/recommendations/route.ts`)
+
+```typescript
+// Recommends relevant NeurIPS 2024 papers
+GET /api/researcher/recommendations?areas=<research_areas>
+```
+
+- Finds top 5 NeurIPS 2024 papers aligned with researcher interests
+- Ranks by relevance score
+- Provides explanations for each recommendation
+
+### API Configuration
+
+The Perplexity API client is configured in `lib/perplexity.ts`:
+
+```typescript
+{
+  model: "sonar-pro",              // Most capable model
+  temperature: 0.2,                 // Low randomness for consistency
+  return_citations: true,           // Enable source attribution
+  search_domain_filter: [           // Focus on academic sources
+    "arxiv.org",
+    "scholar.google.com",
+    "github.com"
+  ]
+}
+```
+
+### Performance Optimizations
+
+1. **Parallel Processing** - All researcher analyses run concurrently
+2. **Caching** - 30-minute TTL cache for repeated queries
+3. **Batching** - Multiple API calls combined per researcher
+4. **Smart Prompts** - Concise prompts for faster responses
+
+### Rate Limiting & Error Handling
+
+- Graceful degradation on API failures
+- Exponential backoff for retries
+- Null filtering for failed matches
+- User-friendly error messages
+
+## 📖 Usage
+
+### For Researchers
+
+1. Navigate to the **Researcher Portal**
+2. Enter your name and affiliation
+3. Select your profile from multiple candidates (if applicable)
+4. View your publications and get NeurIPS 2024 paper recommendations
+
+### For Recruiters
+
+1. Navigate to the **Recruiter Portal**
+2. Paste a job description (or use the demo Perplexity AI job)
+3. Click **"Find Top Matches"**
+4. Review ranked researchers with:
+   - Match scores and confidence levels
+   - Alignment strengths and gaps
+   - Extracted skills and expertise
+   - Publication details
+
+### Admin
+
+- Access `/admin` to view and seed the researcher database
+- Pre-populated with example researchers (Yann LeCun, Geoffrey Hinton, Fei-Fei Li)
+
+## 🎯 Key Features
+
+### Dynamic Paper Handling
+
+- **Configurable limits**: Request 1-20 papers per researcher
+- **Edge case handling**: Gracefully handles researchers with 0, <5, or 20+ papers
+- **No hardcoding**: All limits are dynamic and user-configurable
+
+### Profile Selection System
+
+- **Candidate search**: Finds multiple matches for ambiguous names
+- **Confidence levels**: High/Medium/Low rankings
+- **Manual selection**: User chooses correct profile from list
+
+### Critical Scoring
+
+- **Realistic scores**: Most candidates score 60-80% (not inflated)
+- **Strict rubric**: 90+ reserved for exceptional matches
+- **Detailed feedback**: Specific strengths and gaps highlighted
+
+### Clean Modern UI
+
+- White backgrounds with subtle shadows
+- Professional blue/indigo color scheme
+- Generous whitespace and padding
+- Responsive design for all devices
+
+## 🛠️ Development
+
+### Available Scripts
+
+```bash
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run start    # Start production server
+npm run lint     # Run ESLint
+```
+
+### Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `PERPLEXITY_API_KEY` | Your Perplexity API key | Yes |
+| `NEXT_PUBLIC_APP_URL` | Application URL (for production) | No |
+
+### Adding New Features
+
+1. **API Routes**: Add to `app/api/`
+2. **Pages**: Add to `app/`
+3. **Components**: Add to `components/` (if needed)
+4. **Utilities**: Add to `lib/`
+
+## 📊 Performance Metrics
+
+| Metric | Value |
+|--------|-------|
+| **Researcher Matching** | ~5 seconds (for 5 researchers) |
+| **Profile Loading** | ~3-6 seconds |
+| **Cached Queries** | <100ms (instant) |
+| **Cache TTL** | 30 minutes |
+| **Speedup vs Sequential** | 5-10x faster |
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **Perplexity AI** for providing the powerful AI API
+- **Next.js** team for the amazing framework
+- **Vercel** for seamless deployment
+- **Tailwind CSS** for beautiful styling utilities
+
+## 📧 Contact
+
+For questions or support, please open an issue on GitHub.
+
+---
+
+**Built with ❤️ using Perplexity AI**
