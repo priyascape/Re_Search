@@ -117,18 +117,23 @@ function ensureWorkingUrls(
 }
 
 /**
- * GET /api/researcher/profile?name=<name>&affiliation=<affiliation>
+ * GET /api/researcher/profile?name=<name>&affiliation=<affiliation>&limit=<limit>
  * Fetch researcher profile using Perplexity API
  *
  * Query parameters:
  * - name: Researcher's full name (required)
  * - affiliation: University or institution name (required)
+ * - limit: Maximum number of papers to return (optional, default: 10)
  */
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const name = searchParams.get('name');
     const affiliation = searchParams.get('affiliation');
+    const limitParam = searchParams.get('limit');
+
+    // Parse limit with default value of 10, max of 20 for performance
+    const limit = limitParam ? Math.min(Math.max(1, parseInt(limitParam, 10)), 20) : 10;
 
     // Validate required parameters
     if (!name || !affiliation) {
@@ -148,9 +153,9 @@ export async function GET(request: NextRequest) {
     try {
       const perplexity = getPerplexityAPI();
 
-      console.log(`🔍 Searching for researcher: ${name} at ${affiliation}`);
+      console.log(`🔍 Searching for researcher: ${name} at ${affiliation} (limit: ${limit} papers)`);
 
-      result = await perplexity.fetchResearcherProfile(name, affiliation);
+      result = await perplexity.fetchResearcherProfile(name, affiliation, limit);
 
       console.log(`📥 Received ${result.topPapers.length} papers from Perplexity`);
 
@@ -160,14 +165,14 @@ export async function GET(request: NextRequest) {
       // Remove duplicate papers
       result.topPapers = removeDuplicatePapers(result.topPapers);
 
-      // Ensure maximum 5 papers
-      result.topPapers = result.topPapers.slice(0, 5);
+      // Apply the dynamic limit (no longer hardcoded to 5)
+      result.topPapers = result.topPapers.slice(0, limit);
 
       // Ensure all papers have working URLs
       result.topPapers = ensureWorkingUrls(result.topPapers, name);
 
       console.log(`✅ Perplexity API call successful for researcher: ${name}`);
-      console.log(`📄 Found ${result.topPapers.length} verified papers after validation`);
+      console.log(`📄 Found ${result.topPapers.length} verified papers after validation (requested limit: ${limit})`);
     } catch (error) {
       console.error('❌ Perplexity API failed:', error);
       console.error('Error details:', error instanceof Error ? error.message : String(error));

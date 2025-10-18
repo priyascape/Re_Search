@@ -20,12 +20,21 @@ interface ResearcherProfile {
   topPapers: Paper[];
 }
 
+interface Candidate {
+  name: string;
+  affiliation: string;
+  description: string;
+  confidence: 'high' | 'medium' | 'low';
+}
+
 export default function ResearcherProfile() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<ResearcherProfile | null>(null);
   const [showOverlay, setShowOverlay] = useState(true);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [showCandidates, setShowCandidates] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     affiliation: ''
@@ -45,13 +54,13 @@ export default function ResearcherProfile() {
     }
   }, [urlName, urlAffiliation]);
 
-  const fetchResearcherProfile = async (researcherName: string, researcherAffiliation: string) => {
+  const fetchResearcherProfile = async (researcherName: string, researcherAffiliation: string, paperLimit: number = 10) => {
     try {
       setLoading(true);
       setError(null);
 
       const response = await fetch(
-        `/api/researcher/profile?name=${encodeURIComponent(researcherName)}&affiliation=${encodeURIComponent(researcherAffiliation)}`
+        `/api/researcher/profile?name=${encodeURIComponent(researcherName)}&affiliation=${encodeURIComponent(researcherAffiliation)}&limit=${paperLimit}`
       );
 
       if (!response.ok) {
@@ -73,20 +82,71 @@ export default function ResearcherProfile() {
     }
   };
 
+  const searchCandidates = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(
+        `/api/researcher/search?name=${encodeURIComponent(formData.name)}&affiliation=${encodeURIComponent(formData.affiliation)}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to search for researchers');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data.candidates && data.data.candidates.length > 0) {
+        setCandidates(data.data.candidates);
+
+        // If only one high-confidence match, fetch it directly
+        if (data.data.candidates.length === 1 && data.data.candidates[0].confidence === 'high') {
+          await fetchResearcherProfile(
+            data.data.candidates[0].name,
+            data.data.candidates[0].affiliation
+          );
+          setShowOverlay(false);
+        } else {
+          // Show candidate selection
+          setShowCandidates(true);
+        }
+      } else {
+        throw new Error('No researchers found');
+      }
+    } catch (err) {
+      console.error('Error searching candidates:', err);
+      setError(err instanceof Error ? err.message : 'Failed to search for researchers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectCandidate = async (candidate: Candidate) => {
+    setShowCandidates(false);
+    await fetchResearcherProfile(candidate.name, candidate.affiliation);
+    setShowOverlay(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim() || !formData.affiliation.trim()) {
-      setError('Please enter both name and affiliation');
+    if (!formData.name.trim()) {
+      setError('Please enter a researcher name');
       return;
     }
 
     setError(null);
-    await fetchResearcherProfile(formData.name, formData.affiliation);
 
-    // Only hide overlay if fetch was successful
-    if (!error) {
-      setShowOverlay(false);
+    // If affiliation is provided, search for candidates first
+    if (formData.affiliation.trim()) {
+      await searchCandidates();
+    } else {
+      // Otherwise, fetch directly (will use affiliation from search)
+      await fetchResearcherProfile(formData.name, formData.affiliation || 'Unknown');
+      if (!error) {
+        setShowOverlay(false);
+      }
     }
   };
 
@@ -118,8 +178,66 @@ export default function ResearcherProfile() {
         </div>
       </div>
 
+      {/* Candidate Selection Modal */}
+      {showCandidates && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 transform transition-all animate-slideUp">
+            <div className="text-center mb-6">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Select Researcher Profile</h2>
+              <p className="text-gray-600">Multiple profiles found. Please select the correct one:</p>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              {candidates.map((candidate, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSelectCandidate(candidate)}
+                  className="w-full text-left p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all group"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-bold text-gray-900 text-lg group-hover:text-indigo-700">
+                        {candidate.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1 flex items-center gap-2">
+                        <Building2 className="w-4 h-4" />
+                        {candidate.affiliation}
+                      </p>
+                      <p className="text-sm text-gray-700 mt-2">{candidate.description}</p>
+                    </div>
+                    <div className="flex-shrink-0 ml-4">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          candidate.confidence === 'high'
+                            ? 'bg-green-100 text-green-700'
+                            : candidate.confidence === 'medium'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {candidate.confidence.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => {
+                setShowCandidates(false);
+                setCandidates([]);
+              }}
+              className="w-full py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              ← Back to Search
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Overlay Modal for Entering Researcher Details */}
-      {showOverlay && (
+      {showOverlay && !showCandidates && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all animate-slideUp">
             <div className="text-center mb-6">
